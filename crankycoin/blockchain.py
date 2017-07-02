@@ -296,16 +296,25 @@ class Blockchain(object):
 
     def get_reward(self, index):
         # 50 coins per block.  Halves every 1000 blocks
-        return self.INITIAL_COINS_PER_BLOCK / ((2 * index / self.HALVING_FREQUENCY) + 1)
+        reward = self.INITIAL_COINS_PER_BLOCK
+        for i in range(1, ((index / self.HALVING_FREQUENCY) + 1)):
+            reward = reward / 2
+        return reward
 
     def get_size(self):
         return len(self.blocks)
 
     def get_latest_block(self):
-        return self.blocks[-1]
+        try:
+            return self.blocks[-1]
+        except IndexError:
+            return None
 
     def get_block_by_index(self, index):
-        return self.blocks[index]
+        try:
+            return self.blocks[index]
+        except IndexError:
+            return None
 
     def get_all_blocks(self):
         return self.blocks
@@ -319,7 +328,7 @@ class Blockchain(object):
     def pop_next_unconfirmed_transaction(self):
         try:
             return self.unconfirmed_transactions.pop(0)
-        except IndexError as ie:
+        except IndexError:
             return None
 
     def push_unconfirmed_transaction(self, transaction):
@@ -327,7 +336,7 @@ class Blockchain(object):
         return True
 
     def verify_signature(self, signature, message, public_key):
-        return pyelliptic.ECC(pubkey=public_key.decode('hex')).verify(signature, message)
+        return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
 
     def generate_signable_transaction(self, from_address, to_address, amount, timestamp):
         return ":".join((from_address, to_address, amount, timestamp))

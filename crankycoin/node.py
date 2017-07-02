@@ -414,20 +414,23 @@ class Client(NodeMixin):
     private key: 'a3dab7c3c83d19f6caadc82e748f08e53d07974ececa450c1d8d3d01fb39b9aa'
     public key: '0442c0fe0050d53426395a046e3c4e6216189666544005567b0b3ed3dcf0151a1ac5b926bdfe93f15ecea3230951ed4151dadab28f2906d0052febea1b7453ce6f'
     """
+    __private_key__ = None
+    __public_key__ = None
 
     def __init__(self, private_key=None, public_key=None):
-        self.private_key = private_key.decode('hex')
-        self.public_key = public_key.decode('hex')
+        if private_key is not None and public_key is not None:
+            self.__private_key__ = private_key.decode('hex')
+            self.__public_key__ = public_key.decode('hex')
         self.ecc = self.generate_ecc_instance()
 
     def generate_ecc_instance(self):
-        if self.private_key is None or self.public_key is None:
+        if self.__private_key__ is None or self.__public_key__ is None:
             print "ECC keys not provided.  Generating ECC keys"
             ecc = pyelliptic.ECC(curve='secp256k1')
-            self.private_key = self.ecc.get_privkey()
-            self.public_key = self.ecc.get_pubkey()
+            self.__private_key__ = ecc.get_privkey()
+            self.__public_key__ = ecc.get_pubkey()
         else:
-            ecc = pyelliptic.ECC(curve='secp256k1', privkey=self.private_key, pubkey=self.public_key)
+            ecc = pyelliptic.ECC(curve='secp256k1', privkey=self.__private_key__, pubkey=self.__public_key__)
         return ecc
 
     def get_pubkey(self, hex=True):
@@ -437,11 +440,11 @@ class Client(NodeMixin):
         return self.ecc.get_privkey().encode('hex') if hex else self.ecc.get_privkey()
 
     def sign(self, message):
-        return self.ecc.sign(message)
+        return self.ecc.sign(message).encode('hex')
 
     def verify(self, signature, message, public_key=None):
         if public_key is not None:
-            return pyelliptic.ECC(pubkey=public_key.decode('hex')).verify(signature, message)
+            return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
         return self.ecc.verify(signature, message)
 
     def get_balance(self):

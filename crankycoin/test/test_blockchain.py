@@ -875,4 +875,567 @@ class TestBlockchain(unittest.TestCase):
             self.assertEqual(patched_calculate_block_hash.call_count, 4)
 
     def test_get_transaction_history_whenAddressHasTransactions_returnHistory(self):
-        pass
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'address',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'address',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        transaction_four = {
+            'from': 'from',
+            'timestamp': 1498926800,
+            'to': 'address',
+            'amount': 7,
+            'signature': 'signature_four',
+            'hash': "transaction_hash_four"
+        }
+        transaction_five = {
+            'from': 'address',
+            'timestamp': 1498927800,
+            'to': 'to',
+            'amount': 11,
+            'signature': 'signature_five',
+            'hash': "transaction_hash_five"
+        }
+        transaction_six = {
+            'from': 'from',
+            'timestamp': 1498928800,
+            'to': 'to',
+            'amount': 13,
+            'signature': 'signature_six',
+            'hash': "transaction_hash_six"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one, transaction_two]
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_three, transaction_four]
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_five, transaction_six]
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            transaction_history = subject.get_transaction_history('address')
+
+            self.assertEqual(len(transaction_history), 4)
+            self.assertEqual(transaction_history, [transaction_one, transaction_two, transaction_four, transaction_five])
+
+    def test_get_transaction_history_whenAddressHasNoTransactions_returnEmptyList(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'to',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        transaction_four = {
+            'from': 'from',
+            'timestamp': 1498926800,
+            'to': 'to',
+            'amount': 7,
+            'signature': 'signature_four',
+            'hash': "transaction_hash_four"
+        }
+        transaction_five = {
+            'from': 'from',
+            'timestamp': 1498927800,
+            'to': 'to',
+            'amount': 11,
+            'signature': 'signature_five',
+            'hash': "transaction_hash_five"
+        }
+        transaction_six = {
+            'from': 'from',
+            'timestamp': 1498928800,
+            'to': 'to',
+            'amount': 13,
+            'signature': 'signature_six',
+            'hash': "transaction_hash_six"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one, transaction_two]
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_three, transaction_four]
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_five, transaction_six]
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            transaction_history = subject.get_transaction_history('address')
+
+            self.assertEqual(len(transaction_history), 0)
+
+    def test_get_balance_whenAddressHasTransactions_returnBalance(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'address',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'address',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        transaction_four = {
+            'from': 'from',
+            'timestamp': 1498926800,
+            'to': 'address',
+            'amount': 7,
+            'signature': 'signature_four',
+            'hash': "transaction_hash_four"
+        }
+        transaction_five = {
+            'from': 'address',
+            'timestamp': 1498927800,
+            'to': 'to',
+            'amount': .11,
+            'signature': 'signature_fave',
+            'hash': "transaction_hash_five"
+        }
+        transaction_six = {
+            'from': 'address',
+            'timestamp': 1498928800,
+            'to': 'to',
+            'amount': .13,
+            'signature': 'signature_six',
+            'hash': "transaction_hash_six"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one, transaction_two]
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_three, transaction_four]
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_five, transaction_six]
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            balance = subject.get_balance('address')
+
+            self.assertEqual(balance, 10.76)
+
+    def test_get_balance_whenAddressHasNoTransactions_returnZeroBalance(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'to',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one]
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_two]
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_three]
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            balance = subject.get_balance('address')
+
+            self.assertEqual(balance, 0)
+
+    def test_find_duplicate_transactions_WhenHashExists_thenReturnBlockIndex(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'to',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        transaction_four = {
+            'from': 'from',
+            'timestamp': 1498926800,
+            'to': 'address',
+            'amount': 7,
+            'signature': 'signature_four',
+            'hash': "transaction_hash_four"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one]
+        block_one.index = 0
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_two]
+        block_two.index = 1
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_three, transaction_four]
+        block_three.index = 2
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            resp = subject.find_duplicate_transactions("transaction_hash_four")
+
+            self.assertEqual(resp, block_three.index)
+
+    def test_find_duplicate_transactions_WhenHashNotFound_thenReturnFalse(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'to',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        transaction_four = {
+            'from': 'from',
+            'timestamp': 1498926800,
+            'to': 'address',
+            'amount': 7,
+            'signature': 'signature_four',
+            'hash': "transaction_hash_four"
+        }
+        block_one = Mock(Block)
+        block_one.transactions = [transaction_one]
+        block_one.index = 0
+        block_two = Mock(Block)
+        block_two.transactions = [transaction_two]
+        block_two.index = 1
+        block_three = Mock(Block)
+        block_three.transactions = [transaction_three, transaction_four]
+        block_three.index = 2
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [block_one, block_two, block_three]
+
+            resp = subject.find_duplicate_transactions("transaction_hash_five")
+
+            self.assertFalse(resp)
+
+    def test_validate_chain_whenAllBlocksValid_thenReturnTrue(self):
+        mock_block = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'validate_block', return_value=True) as patched_validate_block:
+            subject = Blockchain()
+            subject.blocks = [mock_block, mock_block, mock_block]
+
+            resp = subject.validate_chain()
+
+            self.assertTrue(resp)
+
+    def test_validate_chain_whenInvalidBlockPresent_thenRaiseException(self):
+        mock_block = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'validate_block', side_effect=InvalidHash(2, "Invalid Hash")) as patched_validate_block:
+            subject = Blockchain()
+            subject.blocks = [mock_block, mock_block, mock_block]
+
+            with self.assertRaises(InvalidHash):
+                subject.validate_chain()
+
+    def test_get_reward_whenGivenIndex_thenReturnsProperReward(self):
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            reward_one = subject.get_reward(0)
+            reward_two = subject.get_reward(999)
+            reward_three = subject.get_reward(1000)
+            reward_four = subject.get_reward(1999)
+            reward_five = subject.get_reward(2000)
+            reward_six = subject.get_reward(3000)
+            reward_seven = subject.get_reward(4000)
+            reward_eight = subject.get_reward(5000)
+            reward_nine = subject.get_reward(5999)
+            reward_ten = subject.get_reward(6000)
+
+            self.assertEqual(reward_one, 50)
+            self.assertEqual(reward_two, 50)
+            self.assertEqual(reward_three, 25)
+            self.assertEqual(reward_four, 25)
+            self.assertEqual(reward_five, 12)
+            self.assertEqual(reward_six, 6)
+            self.assertEqual(reward_seven, 3)
+            self.assertEqual(reward_eight, 1)
+            self.assertEqual(reward_nine, 1)
+            self.assertEqual(reward_ten, 0)
+
+    def test_get_size_whenBlocksExist_thenReturnsProperLength(self):
+        mock_block = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block, mock_block, mock_block]
+
+            size = subject.get_size()
+
+            self.assertEqual(3, size)
+
+    def test_get_size_whenNoBlocksExist_thenReturnsZero(self):
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            size = subject.get_size()
+
+            self.assertEqual(0, size)
+
+    def test_get_latest_block_whenBlocksExist_thenReturnLatestBlock(self):
+        mock_block = Mock(Block)
+        latest_block = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block, mock_block, mock_block, latest_block]
+
+            block = subject.get_latest_block()
+
+            self.assertEqual(block, latest_block)
+
+    def test_get_latest_block_whenNoBlocksExist_thenReturnNone(self):
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            block = subject.get_latest_block()
+
+            self.assertIsNone(block)
+
+    def test_get_block_by_index_whenBlockExists_thenReturnCorrectBlock(self):
+        mock_block_one = Mock(Block)
+        mock_block_two = Mock(Block)
+        mock_block_three = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block_one, mock_block_two, mock_block_three]
+
+            block = subject.get_block_by_index(1)
+
+            self.assertEqual(block, mock_block_two)
+
+    def test_get_block_by_index_whenBlockDoesNotExist_thenReturnNone(self):
+        mock_block_one = Mock(Block)
+        mock_block_two = Mock(Block)
+        mock_block_three = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block_one, mock_block_two, mock_block_three]
+
+            block = subject.get_block_by_index(3)
+
+            self.assertIsNone(block)
+
+    def test_get_blocks_range_whenBlocksExists_thenReturnCorrectBlocks(self):
+        mock_block_one = Mock(Block)
+        mock_block_two = Mock(Block)
+        mock_block_three = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block_one, mock_block_two, mock_block_three]
+
+            blocks = subject.get_blocks_range(0, 2)
+
+            self.assertEqual(blocks, subject.blocks)
+
+            blocks = subject.get_blocks_range(0, 1)
+
+            self.assertEqual(blocks, [mock_block_one, mock_block_two])
+
+    def test_get_blocks_range_whenBlocksOutOfRange_thenReturnsListOfBlocksWithinRange(self):
+        mock_block_one = Mock(Block)
+        mock_block_two = Mock(Block)
+        mock_block_three = Mock(Block)
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.blocks = [mock_block_one, mock_block_two, mock_block_three]
+
+            blocks = subject.get_blocks_range(4, 6)
+
+            self.assertEqual(blocks, [])
+
+            blocks = subject.get_blocks_range(1, 5)
+
+            self.assertEqual(blocks, [mock_block_two, mock_block_three])
+
+    def test_pop_next_unconfirmed_transaction_whenTransactionsExist_thenPopsAndReturnsFirstTransaction(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        transaction_two = {
+            'from': 'from',
+            'timestamp': 1498924800,
+            'to': 'to',
+            'amount': 3,
+            'signature': 'signature_two',
+            'hash': "transaction_hash_two"
+        }
+        transaction_three = {
+            'from': 'from',
+            'timestamp': 1498925800,
+            'to': 'to',
+            'amount': 5,
+            'signature': 'signature_three',
+            'hash': "transaction_hash_three"
+        }
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+            subject.unconfirmed_transactions = [transaction_one, transaction_two, transaction_three]
+
+            transaction = subject.pop_next_unconfirmed_transaction()
+
+            self.assertEqual(transaction, transaction_one)
+            self.assertEqual(len(subject.unconfirmed_transactions), 2)
+            self.assertTrue(transaction_one not in subject.unconfirmed_transactions)
+
+    def test_pop_next_unconfirmed_transaction_whenNoTransactionsExist_thenReturnsNone(self):
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            transaction = subject.pop_next_unconfirmed_transaction()
+
+            self.assertIsNone(transaction)
+
+    def test_push_unconfirmed_transaction_thenPushesTransactionAndReturnsNone(self):
+        transaction_one = {
+            'from': 'from',
+            'timestamp': 1498923800,
+            'to': 'to',
+            'amount': 1,
+            'signature': 'signature_one',
+            'hash': "transaction_hash_one"
+        }
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            resp = subject.push_unconfirmed_transaction(transaction_one)
+
+            self.assertTrue(resp)
+            self.assertEqual(len(subject.unconfirmed_transactions), 1)
+            self.assertTrue(transaction_one in subject.unconfirmed_transactions)
+
+    def test_verify_signature_whenSignatureAndMessageAndPublicKeyMatch_thenReturnsTrue(self):
+        signature = '304502202d009c9b97385189d23600ae480435ea5b68786dbdba184c80e0fb6e58d8c5520221009c25f5cdf659f33ce04f683e14f355b3db5524a289feb9efa4c6879342a81648'
+        message = 'hello world'
+        public_key = '04496ee863ef587f55b911987c0b0e88b73e840440b834c50ff774677dde49468dafe07868452635e986c35b62244b4739a8db5e27750ff172a9e52ea7278e93c6'
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            resp = subject.verify_signature(
+                signature,
+                message,
+                public_key
+            )
+
+            self.assertTrue(resp)
+
+    def test_verify_signature_whenSignatureAndMessageAndPublicKeyMisMatch_thenReturnsFalse(self):
+        signature = '304502202d009c9b97385189d23600ae480435ea5b68786dbdba184c80e0fb6e58d8c5520221009c25f5cdf659f33ce04f683e14f355b3db5524a289feb9efa4c6879342a81648'
+        message = 'invalid message'
+        public_key = '04496ee863ef587f55b911987c0b0e88b73e840440b834c50ff774677dde49468dafe07868452635e986c35b62244b4739a8db5e27750ff172a9e52ea7278e93c6'
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+            subject = Blockchain()
+
+            resp = subject.verify_signature(
+                signature,
+                message,
+                public_key
+            )
+
+            self.assertFalse(resp)
