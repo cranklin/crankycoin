@@ -220,8 +220,7 @@ class FullNode(NodeMixin):
         return
 
     def load_blockchain(self, block_path):
-        # TODO
-        # load blockchain from path
+        # TODO load blockchain from path
         pass
 
     def synchronize(self):

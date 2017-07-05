@@ -204,6 +204,7 @@ class Blockchain(object):
         return False
 
     def add_block(self, block):
+        #TODO change this from memory to persistent
         if self.validate_block(block):
             self.blocks.append(block)
             return True
