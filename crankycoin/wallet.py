@@ -4,7 +4,7 @@ import json
 import pyelliptic
 import requests
 
-from node import NodeMixin
+from node import NodeMixin, BALANCE_URL
 
 class Client(NodeMixin):
     """
