@@ -75,7 +75,7 @@ class Blockchain(object):
     def get_genesis_block(self):
         genesis_transaction = {
                 "from": "0",
-                "to": "0442c0fe0050d53426395a046e3c4e6216189666544005567b0b3ed3dcf0151a1ac5b926bdfe93f15ecea3230951ed4151dadab28f2906d0052febea1b7453ce6f",
+                "to": "0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596",
                 "amount": 50,
                 "signature": "0",
                 "timestamp": 0,

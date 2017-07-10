@@ -2,7 +2,6 @@ import requests
 
 from blockchain import *
 from klein import Klein
-from twisted.internet import threads
 
 FULL_NODE_PORT = "30013"
 NODES_URL = "http://{}:{}/nodes"

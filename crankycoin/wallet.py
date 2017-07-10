@@ -7,12 +7,7 @@ import requests
 from node import NodeMixin, BALANCE_URL
 
 class Client(NodeMixin):
-    """
-    Never do this with an actual private key.  I'm only including it in the comments because this is a demonstration
 
-    private key: 'a3dab7c3c83d19f6caadc82e748f08e53d07974ececa450c1d8d3d01fb39b9aa'
-    public key: '0442c0fe0050d53426395a046e3c4e6216189666544005567b0b3ed3dcf0151a1ac5b926bdfe93f15ecea3230951ed4151dadab28f2906d0052febea1b7453ce6f'
-    """
     __private_key__ = None
     __public_key__ = None
 
