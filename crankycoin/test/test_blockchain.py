@@ -703,6 +703,7 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_size', side_effect=[6, 5]) as patched_get_size:
             subject = Blockchain()
             subject.blocks = mock_blocks
+            subject.blocks_lock = threading.Lock()
 
             resp = subject.alter_chain(mock_forked_blocks)
 
@@ -756,6 +757,7 @@ class TestBlockchain(unittest.TestCase):
             subject = Blockchain()
             mock_blocks = Mock()
             subject.blocks = mock_blocks
+            subject.blocks_lock = threading.Lock()
 
             resp = subject.add_block(mock_block)
 
@@ -776,7 +778,11 @@ class TestBlockchain(unittest.TestCase):
             mock_blocks.append.assert_not_called()
 
     def test_mine_block_whenNoUnconfirmedTransactions_thenReturnsNone(self):
+        latest_block = Mock(Block)
+        latest_block.index = 35
+        latest_block.current_hash = "latest_block_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', return_value=None) as patched_pop_next_unconfirmed_transaction:
             subject = Blockchain()
 
@@ -794,7 +800,12 @@ class TestBlockchain(unittest.TestCase):
             'signature': 'signature',
             'hash': 'incorrect_transaction_hash'
         }
+        latest_block = Mock(Block)
+        latest_block.index = 35
+        latest_block.current_hash = "latest_block_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
+ \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction, \
                 patch.object(Blockchain, 'calculate_transaction_hash', return_value="transaction_hash") as patched_calculate_transaction_hash:
             subject = Blockchain()
@@ -815,7 +826,12 @@ class TestBlockchain(unittest.TestCase):
             'hash': 'transaction_hash'
         }
         block_id_with_same_transaction = 38
+        latest_block = Mock(Block)
+        latest_block.index = 35
+        latest_block.current_hash = "latest_block_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
+ \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction, \
                 patch.object(Blockchain, 'calculate_transaction_hash', return_value="transaction_hash") as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=block_id_with_same_transaction) as patched_find_duplicate_transactions:
@@ -1376,6 +1392,7 @@ class TestBlockchain(unittest.TestCase):
         }
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             subject = Blockchain()
+            subject.unconfirmed_transactions_lock = threading.Lock()
             subject.unconfirmed_transactions = [transaction_one, transaction_two, transaction_three]
 
             transaction = subject.pop_next_unconfirmed_transaction()
@@ -1387,6 +1404,7 @@ class TestBlockchain(unittest.TestCase):
     def test_pop_next_unconfirmed_transaction_whenNoTransactionsExist_thenReturnsNone(self):
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             subject = Blockchain()
+            subject.unconfirmed_transactions_lock = threading.Lock()
 
             transaction = subject.pop_next_unconfirmed_transaction()
 
@@ -1403,6 +1421,7 @@ class TestBlockchain(unittest.TestCase):
         }
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             subject = Blockchain()
+            subject.unconfirmed_transactions_lock = threading.Lock()
 
             resp = subject.push_unconfirmed_transaction(transaction_one)
 

@@ -127,3 +127,80 @@ class TestNode(unittest.TestCase):
             self.assertEqual(block.timestamp, 1234567890)
             self.assertEqual(block.nonce, 12345)
             patched_requests.assert_called_once_with('http://127.0.0.2:30013/block/29')
+
+    def test_request_block_whenRequestException_thenReturnsNone(self):
+        with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
+                patch("crankycoin.requests.get", side_effect=requests.exceptions.RequestException()) as patched_requests:
+            node = FullNode("127.0.0.1", "reward_address")
+
+            block = node.request_block("127.0.0.2", "30013", "latest")
+
+            self.assertIsNone(block)
+            patched_requests.assert_called_once_with('http://127.0.0.2:30013/block/latest')
+
+    def test_request_block_from_all_whenIndexIsLatest_thenReturnsLatestBlockFromAll(self):
+        block = Mock(Block)
+        with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
+                patch.object(FullNode, 'request_block', side_effect=[block, block, block]) as patched_request_block:
+            node = FullNode("127.0.0.1", "reward_address")
+            node.full_nodes = {"127.0.0.1", "127.0.0.2", "127.0.0.3"}
+
+            blocks = node.request_block_from_all("latest")
+
+            self.assertEqual(blocks, [block, block, block])
+            patched_request_block.assert_has_calls([
+                call("127.0.0.1", "30013", "latest"),
+                call("127.0.0.2", "30013", "latest"),
+                call("127.0.0.3", "30013", "latest")
+            ], True)
+
+    def test_request_blocks_range(self):
+        pass
+
+    def test_request_blockchain(self):
+        pass
+
+    def test_mine(self):
+        pass
+
+    def test_broadcast_block(self):
+        pass
+
+    def test_add_node(self):
+        pass
+
+    def test_broadcast_node(self):
+        pass
+
+    def test_load_blockchain(self):
+        pass
+
+    def test_synchronize(self):
+        pass
+
+    def test_generate_ecc_instance(self):
+        pass
+
+    def test_get_pubkey(self):
+        pass
+
+    def test_get_privkey(self):
+        pass
+
+    def test_sign(self):
+        pass
+
+    def test_verify(self):
+        pass
+
+    def test_get_balance(self):
+        pass
+
+    def test_create_transaction(self):
+        pass
+
+    def test_calculate_transaction_hash(self):
+        pass
+
+    def test_generate_signable_transaction(self):
+        pass

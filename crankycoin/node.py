@@ -3,6 +3,7 @@ import json
 import pyelliptic
 import random
 import requests
+import threading
 
 from blockchain import *
 from klein import Klein
@@ -86,6 +87,11 @@ class FullNode(NodeMixin):
             self.blockchain = Blockchain()
         else:
             self.load_blockchain(block_path)
+
+        thread = threading.Thread(target=self.mine, args=())
+        thread.daemon = True
+        thread.start()
+        print "full node server started..."
         self.app.run("localhost", FULL_NODE_PORT)
 
     def request_block(self, node, port, index="latest"):
@@ -169,11 +175,35 @@ class FullNode(NodeMixin):
         return None
 
     def mine(self):
+        print "mining started..."
         while True:
+            latest_block = self.blockchain.get_latest_block()
+            latest_hash = latest_block.current_hash
+            latest_index = latest_block.index
+
             block = self.blockchain.mine_block(self.reward_address)
-            self.broadcast_block(block)
+            if not block:
+                continue
+            statuses = self.broadcast_block(block)
+            if statuses['expirations'] > statuses['confirmations'] or \
+                    statuses['invalidations'] > statuses['confirmations']:
+                self.synchronize()
+                new_latest_block = self.blockchain.get_latest_block()
+                if latest_hash != new_latest_block.current_hash or \
+                        latest_index != new_latest_block.index:
+                    #latest_block changed after sync.. don't add the block.
+                    self.blockchain.recycle_transactions(block)
+                    continue
+            self.blockchain.add_block(block)
 
     def broadcast_block(self, block):
+        #TODO convert to grequests and concurrently gather a list of responses
+        statuses = {
+            "confirmations": 0,
+            "invalidations": 0,
+            "expirations": 0
+        }
+
         self.request_nodes_from_all()
         bad_nodes = set()
         data = {
@@ -185,13 +215,21 @@ class FullNode(NodeMixin):
             url = BLOCKS_URL.format(node, FULL_NODE_PORT)
             try:
                 response = requests.post(url, data)
+                if response.status_code == 202:
+                    # confirmed and accepted by node
+                    statuses["confirmations"] += 1
+                elif response.status_code == 406:
+                    # invalidated and rejected by node
+                    statuses["invalidations"] += 1
+                elif response.status_code == 409:
+                    # expired and rejected by node
+                    statuses["expirations"] += 1
             except requests.exceptions.RequestException as re:
                 bad_nodes.add(node)
         for node in bad_nodes:
             self.remove_node(node)
         bad_nodes.clear()
-        return
-        # convert to grequests and return list of responses
+        return statuses
 
     def add_node(self, host):
         if host == self.host:
@@ -357,9 +395,9 @@ class FullNode(NodeMixin):
                 for block in remote_diff_blocks:
                     result = self.blockchain.add_block(block)
                     if not result:
-                        request.setResponseCode(406) # not acceptable
+                        request.setResponseCode(406)  # not acceptable
                         return json.dumps({'message': 'block {} rejected'.format(block.index)})
-                request.setResponseCode(202) # accepted
+                request.setResponseCode(202)  # accepted
                 return json.dumps({'message': 'accepted'})
             else:
                 # first block in diff blocks does not fit local chain
@@ -371,24 +409,24 @@ class FullNode(NodeMixin):
                         # found the fork
                         result = self.blockchain.alter_chain(remote_diff_blocks)
                         if not result:
-                            request.setResponseCode(406) # not acceptable
+                            request.setResponseCode(406)  # not acceptable
                             return json.dumps({'message': 'blocks rejected'})
-                        request.setResponseCode(202) # accepted
+                        request.setResponseCode(202)  # accepted
                         return json.dumps({'message': 'accepted'})
-                request.setResponseCode(406) # not acceptable
+                request.setResponseCode(406)  # not acceptable
                 return json.dumps({'message': 'blocks rejected'})
 
         elif block.index <= my_latest_block["index"]:
             # new block index is less than ours
-            request.setResponseCode(409) # conflict
+            request.setResponseCode(409)  # conflict
             return json.dumps({'message': 'Block index too low.  Fetch latest chain.'})
 
         # correct block index. verify txs, hash
         result = self.blockchain.add_block(block)
         if not result:
-            request.setResponseCode(406) # not acceptable
+            request.setResponseCode(406)  # not acceptable
             return json.dumps({'message': 'block {} rejected'.format(block.index)})
-        request.setResponseCode(202) # accepted
+        request.setResponseCode(202)  # accepted
         return json.dumps({'message': 'accepted'})
 
     @app.route('/blocks', methods=['GET'])

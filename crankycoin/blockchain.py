@@ -1,7 +1,9 @@
-import hashlib
-import pyelliptic
-import json
 import datetime
+import hashlib
+import json
+import pyelliptic
+import threading
+
 from errors import *
 
 
@@ -67,6 +69,8 @@ class Blockchain(object):
         else:
             for block in blocks:
                 self.add_block(block)
+        self.unconfirmed_transactions_lock = threading.Lock()
+        self.blocks_lock = threading.Lock()
 
     def get_genesis_block(self):
         genesis_transaction = {
@@ -199,20 +203,26 @@ class Blockchain(object):
         alternate_blocks.extend(blocks)
         alternate_chain = Blockchain(alternate_blocks)
         if alternate_chain.get_size() > self.get_size():
-            self.blocks = alternate_blocks
-            return True
+            with self.blocks_lock:
+                self.blocks = alternate_blocks
+                return True
         return False
 
     def add_block(self, block):
         #TODO change this from memory to persistent
         if self.validate_block(block):
-            self.blocks.append(block)
-            return True
+            with self.blocks_lock:
+                self.blocks.append(block)
+                return True
         return False
 
     def mine_block(self, reward_address):
         #TODO add transaction fees
         transactions = []
+        latest_block = self.get_latest_block()
+        new_block_id = latest_block.index + 1
+        previous_hash = latest_block.current_hash
+
         for i in range(0, self.MAX_TRANSACTIONS_PER_BLOCK):
             unconfirmed_transaction = self.pop_next_unconfirmed_transaction()
             if unconfirmed_transaction is None:
@@ -226,10 +236,10 @@ class Blockchain(object):
             if not self.verify_signature(
                     unconfirmed_transaction["signature"],
                     ":".join((
-                        unconfirmed_transaction["from"],
-                        unconfirmed_transaction["to"],
-                        str(unconfirmed_transaction["amount"]),
-                        str(unconfirmed_transaction["timestamp"]))),
+                            unconfirmed_transaction["from"],
+                            unconfirmed_transaction["to"],
+                            str(unconfirmed_transaction["amount"]),
+                            str(unconfirmed_transaction["timestamp"]))),
                     unconfirmed_transaction["from"]):
                 continue
 
@@ -238,11 +248,10 @@ class Blockchain(object):
         if len(transactions) < 1:
             return None
 
-        latest_block = self.get_latest_block()
         reward_transaction = {
             "from": "0",
             "to": reward_address,
-            "amount": self.get_reward(latest_block.index + 1),
+            "amount": self.get_reward(new_block_id),
             "signature": "0",
             "timestamp": datetime.datetime.utcnow().isoformat()
         }
@@ -253,13 +262,22 @@ class Blockchain(object):
         timestamp = datetime.datetime.utcnow().isoformat()
 
         def new_hash(nonce):
-            return self.calculate_block_hash(latest_block.index + 1, latest_block.current_hash, timestamp, transactions, nonce)
+            return self.calculate_block_hash(new_block_id, previous_hash, timestamp, transactions, nonce)
 
         i = 0
         while new_hash(i)[:4] != "0000":
+            latest_block = self.get_latest_block()
+            if latest_block.index >= new_block_id or latest_block.current_hash != previous_hash:
+                # Next block in sequence was mined by another node.  Stop mining current block.
+                # identify in-progress transactions that aren't included in the latest_block and place them back in
+                # the unconfirmed transactions pool
+                for transaction in transactions[:-1]:
+                    if transaction not in latest_block.transactions:
+                        self.push_unconfirmed_transaction(transaction)
+                return None
             i += 1
 
-        block = Block(latest_block.index + 1, transactions, latest_block.current_hash, new_hash(i), timestamp, i)
+        block = Block(new_block_id, transactions, previous_hash, new_hash(i), timestamp, i)
         return block
 
     def get_transaction_history(self, address):
@@ -286,6 +304,12 @@ class Blockchain(object):
                 if transaction["hash"] == transaction_hash:
                     return block.index
         return False
+
+    def recycle_transactions(self, block):
+        for transaction in block.transactions[:-1]:
+            if not self.find_duplicate_transactions(transaction["hash"]):
+                self.push_unconfirmed_transaction(transaction)
+        return
 
     def validate_chain(self):
         try:
@@ -328,13 +352,15 @@ class Blockchain(object):
 
     def pop_next_unconfirmed_transaction(self):
         try:
-            return self.unconfirmed_transactions.pop(0)
+            with self.unconfirmed_transactions_lock:
+                return self.unconfirmed_transactions.pop(0)
         except IndexError:
             return None
 
     def push_unconfirmed_transaction(self, transaction):
-        self.unconfirmed_transactions.append(transaction)
-        return True
+        with self.unconfirmed_transactions_lock:
+            self.unconfirmed_transactions.append(transaction)
+            return True
 
     def verify_signature(self, signature, message, public_key):
         return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
