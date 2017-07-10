@@ -1,9 +1,4 @@
-import hashlib
-import json
-import pyelliptic
-import random
 import requests
-import threading
 
 from blockchain import *
 from klein import Klein
@@ -91,7 +86,7 @@ class FullNode(NodeMixin):
         thread = threading.Thread(target=self.mine, args=())
         thread.daemon = True
         thread.start()
-        print "full node server started..."
+        print "\n\nfull node server started...\n\n"
         self.app.run("localhost", FULL_NODE_PORT)
 
     def request_block(self, node, port, index="latest"):
@@ -175,7 +170,7 @@ class FullNode(NodeMixin):
         return None
 
     def mine(self):
-        print "mining started..."
+        print "\n\nmining started...\n\n"
         while True:
             latest_block = self.blockchain.get_latest_block()
             latest_hash = latest_block.current_hash

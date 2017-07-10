@@ -63,14 +63,14 @@ class Blockchain(object):
     blocks = []
 
     def __init__(self, blocks=None):
+        self.unconfirmed_transactions_lock = threading.Lock()
+        self.blocks_lock = threading.Lock()
         if blocks is None:
             genesis_block = self.get_genesis_block()
             self.add_block(genesis_block)
         else:
             for block in blocks:
                 self.add_block(block)
-        self.unconfirmed_transactions_lock = threading.Lock()
-        self.blocks_lock = threading.Lock()
 
     def get_genesis_block(self):
         genesis_transaction = {
