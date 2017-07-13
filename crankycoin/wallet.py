@@ -5,7 +5,7 @@ import pyelliptic
 import random
 import requests
 
-from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT
+from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
 
 class Client(NodeMixin):
 
@@ -42,10 +42,25 @@ class Client(NodeMixin):
             return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
         return self.ecc.verify(signature, message)
 
-    def get_balance(self, node=None):
+    def get_balance(self, address=None, node=None):
+        if address is None:
+            address = self.get_pubkey()
         if node is None:
             node = random.sample(self.full_nodes, 1)[0]
-        url = BALANCE_URL.format(node, FULL_NODE_PORT, self.get_pubkey())
+        url = BALANCE_URL.format(node, FULL_NODE_PORT, address)
+        try:
+            response = requests.get(url)
+            return response.json()
+        except requests.exceptions.RequestException as re:
+            pass
+        return None
+
+    def get_transaction_history(self, address=None, node=None):
+        if address is None:
+            address = self.get_pubkey()
+        if node is None:
+            node = random.sample(self.full_nodes, 1)[0]
+        url = TRANSACTION_HISTORY_URL.format(node, FULL_NODE_PORT, address)
         try:
             response = requests.get(url)
             return response.json()
@@ -89,7 +104,7 @@ class Client(NodeMixin):
         return hash_object.hexdigest()
 
     def generate_signable_transaction(self, from_address, to_address, amount, timestamp):
-        return ":".join((from_address, to_address, amount, timestamp))
+        return ":".join((from_address, to_address, str(amount), str(timestamp)))
 
 
 if __name__ == "__main__":

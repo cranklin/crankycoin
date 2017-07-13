@@ -1,3 +1,5 @@
+import json
+
 class Block(object):
 
     def __init__(self, index, transactions, previous_hash, current_hash, timestamp, nonce):
@@ -30,6 +32,9 @@ class Block(object):
         self.current_hash = current_hash
         self.timestamp = timestamp
         self.nonce = nonce
+
+    def as_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def __repr__(self):
         return "<Crankycoin Block {}>".format(self.index)

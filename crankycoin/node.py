@@ -58,7 +58,7 @@ class NodeMixin(object):
         for node in self.full_nodes:
             url = TRANSACTIONS_URL.format(node, FULL_NODE_PORT)
             try:
-                response = requests.post(url, data)
+                response = requests.post(url, json=data)
             except requests.exceptions.RequestException as re:
                 bad_nodes.add(node)
         for node in bad_nodes:
@@ -202,14 +202,14 @@ class FullNode(NodeMixin):
         self.request_nodes_from_all()
         bad_nodes = set()
         data = {
-            "block": block,
+            "block": block.as_json(),
             "host": self.host
         }
 
         for node in self.full_nodes:
             url = BLOCKS_URL.format(node, FULL_NODE_PORT)
             try:
-                response = requests.post(url, data)
+                response = requests.post(url, json=data)
                 if response.status_code == 202:
                     # confirmed and accepted by node
                     statuses["confirmations"] += 1
@@ -244,7 +244,7 @@ class FullNode(NodeMixin):
         for node in self.full_nodes:
             url = NODES_URL.format(node, FULL_NODE_PORT)
             try:
-                requests.post(url, data)
+                requests.post(url, json=data)
             except requests.exceptions.RequestException as re:
                 bad_nodes.add(node)
         for node in bad_nodes:
