@@ -2,9 +2,10 @@ import datetime
 import hashlib
 import json
 import pyelliptic
+import random
 import requests
 
-from node import NodeMixin, BALANCE_URL
+from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT
 
 class Client(NodeMixin):
 
@@ -41,8 +42,10 @@ class Client(NodeMixin):
             return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
         return self.ecc.verify(signature, message)
 
-    def get_balance(self):
-        url = BALANCE_URL.format(self.get_pubkey())
+    def get_balance(self, node=None):
+        if node is None:
+            node = random.sample(self.full_nodes, 1)[0]
+        url = BALANCE_URL.format(node, FULL_NODE_PORT, self.get_pubkey())
         try:
             response = requests.get(url)
             return response.json()
