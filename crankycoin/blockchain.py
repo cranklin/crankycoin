@@ -1,11 +1,15 @@
 import datetime
 import hashlib
 import json
+import logging
 import pyelliptic
 import threading
 
 from block import *
 from errors import *
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class Blockchain(object):
@@ -87,17 +91,26 @@ class Blockchain(object):
         hash_object = hashlib.sha256(data_json)
         return hash_object.hexdigest()
 
+    def _check_genesis_block(self, block):
+        if block != self.get_genesis_block():
+            raise GenesisBlockMismatch(block.index, "Genesis Block Mismatch: {}".format(block))
+        return
+
     def _check_hash_and_hash_pattern(self, block):
         block_hash = self.calculate_block_hash(block.index, block.previous_hash, block.timestamp, block.transactions, block.nonce)
-        if block_hash != block.current_hash or block_hash[:4] != "0000":
-            return False
-        return True
+        if block_hash != block.current_hash:
+            raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block.current_hash))
+        if block_hash[:4] != "0000":
+            raise InvalidHash(block.index, "Incompatible Block Hash: {}".format(block.current_hash))
+        return
 
     def _check_index_and_previous_hash(self, block):
         latest_block = self.get_latest_block()
-        if latest_block.index != block.index - 1 or latest_block.current_hash != block.previous_hash:
-            return False
-        return True
+        if latest_block.index != block.index - 1:
+            raise ChainContinuityError(block.index, "Incompatible block index: {}".format(block.index-1))
+        if latest_block.current_hash != block.previous_hash:
+            raise ChainContinuityError(block.index, "Incompatible block hash: {} and hash: {}".format(block.index-1, block.previous_hash))
+        return
 
     def _check_transactions_and_block_reward(self, block):
         # transactions : list of transactions
@@ -105,10 +118,10 @@ class Blockchain(object):
         payers = dict()
         for transaction in block.transactions[:-1]:
             if transaction["hash"] != self.calculate_transaction_hash(transaction):
-                return False
+                raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect transaction hash")
             else:
                 if self.find_duplicate_transactions(transaction["hash"]):
-                    return False
+                    raise InvalidTransactions(block.index, "Transactions not valid.  Duplicate transaction detected")
             if not self.verify_signature(
                     transaction["signature"],
                     ":".join((
@@ -117,7 +130,7 @@ class Blockchain(object):
                         str(transaction["amount"]),
                         str(transaction["timestamp"]))),
                     transaction["from"]):
-                return False
+                raise InvalidTransactions(block.index, "Transactions not valid.  Invalid Transaction signature")
             if transaction["from"] in payers:
                 payers[transaction["from"]] += transaction["amount"]
             else:
@@ -125,30 +138,31 @@ class Blockchain(object):
         for key in payers:
             balance = self.get_balance(key)
             if payers[key] > balance:
-                return False
+                raise InvalidTransactions(block.index, "Transactions not valid.  Insufficient funds")
         # last transaction is block reward
         reward_transaction = block.transactions[-1]
         reward_amount = self.get_reward(block.index)
-        if reward_transaction["amount"] != reward_amount or reward_transaction["from"] != 0:
-            return False
-        return True
+        if reward_transaction["amount"] != reward_amount or reward_transaction["from"] != "0":
+            raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect block reward")
+        return
 
     def validate_block(self, block):
         # verify genesis block integrity
         # TODO implement and use Merkle tree
-        if block.index == 0:
-            if block != self.get_genesis_block():
-                raise GenesisBlockMismatch(block.index, "Genesis Block Mismatch: {}".format(block))
-            return True
-        # current hash of data is correct and hash satisfies pattern
-        if not self._check_hash_and_hash_pattern(block):
-            raise InvalidHash(block.index, "Invalid Hash: {}".format(block.current_hash))
-        # block index is correct and previous hash is correct
-        if not self._check_index_and_previous_hash(block):
-            raise ChainContinuityError(block.index, "Block not compatible with previous block id: {} and hash: {}".format(block.index-1, block.previous_hash))
-        # block reward is correct based on block index and halving formula
-        if not self._check_transactions_and_block_reward(block):
-            raise InvalidTransactions(block.index, "Transactions not valid.  Insufficient funds and/or incorrect block reward")
+        try:
+            # if genesis block, check if block is correct
+            if block.index == 0:
+                self._check_genesis_block(block)
+                return True
+            # current hash of data is correct and hash satisfies pattern
+            self._check_hash_and_hash_pattern(block)
+            # block index is correct and previous hash is correct
+            self._check_index_and_previous_hash(block)
+            # block reward is correct based on block index and halving formula
+            self._check_transactions_and_block_reward(block)
+        except BlockchainException as bce:
+            logger.warning("Validation Error (block id: %s): %s", bce.index, bce.message)
+            return False
         return True
 
     def alter_chain(self, blocks):

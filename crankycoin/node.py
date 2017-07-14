@@ -279,7 +279,7 @@ class FullNode(NodeMixin):
                 response = requests.get(url)
                 if response.status_code == 200:
                     remote_latest_block = response.json()
-                    if remote_latest_block["index"] <= my_latest_block["index"]:
+                    if remote_latest_block["index"] <= my_latest_block.index:
                         continue
                     if latest_blocks.get(remote_latest_block["index"], None) is None:
                         latest_blocks[remote_latest_block["index"]] = {
@@ -315,7 +315,7 @@ class FullNode(NodeMixin):
                                 break
                     else:
                         # first block in diff blocks does not fit local chain
-                        for i in range(my_latest_block["index"], 1, -1):
+                        for i in range(my_latest_block.index, 1, -1):
                             # step backwards and look for the first remote block that fits the local chain
                             block = self.request_block(remote_host, FULL_NODE_PORT, str(i))
                             remote_diff_blocks[0:0] = [block]
@@ -364,7 +364,7 @@ class FullNode(NodeMixin):
     @app.route('/blocks', methods=['POST'])
     def post_block(self, request):
         body = json.loads(request.content.read())
-        remote_block = body['block']
+        remote_block = json.loads(body['block'])
         remote_host = body['host']
         block = Block(
             remote_block['index'],
@@ -376,7 +376,7 @@ class FullNode(NodeMixin):
         )
         my_latest_block = self.blockchain.get_latest_block()
 
-        if block.index > my_latest_block["index"] + 1:
+        if block.index > my_latest_block.index + 1:
             # new block index is greater than ours
             remote_diff_blocks = self.request_blocks_range(
                 remote_host,
@@ -396,7 +396,7 @@ class FullNode(NodeMixin):
                 return json.dumps({'message': 'accepted'})
             else:
                 # first block in diff blocks does not fit local chain
-                for i in range(my_latest_block["index"], 1, -1):
+                for i in range(my_latest_block.index, 1, -1):
                     # step backwards and look for the first remote block that fits the local chain
                     block = self.request_block(remote_host, FULL_NODE_PORT, str(i))
                     remote_diff_blocks[0:0] = [block]
@@ -411,7 +411,7 @@ class FullNode(NodeMixin):
                 request.setResponseCode(406)  # not acceptable
                 return json.dumps({'message': 'blocks rejected'})
 
-        elif block.index <= my_latest_block["index"]:
+        elif block.index <= my_latest_block.index:
             # new block index is less than ours
             request.setResponseCode(409)  # conflict
             return json.dumps({'message': 'Block index too low.  Fetch latest chain.'})
