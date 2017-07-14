@@ -66,9 +66,9 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", {'transaction': {}}),
-                call("http://127.0.0.2:30013/transactions", {'transaction': {}}),
-                call("http://127.0.0.3:30013/transactions", {'transaction': {}})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': {}}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': {}}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': {}})
             ], True)
 
     def test_broadcast_transaction_whenRequestException_thenFailsGracefully(self):
@@ -83,9 +83,9 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", {'transaction': {}}),
-                call("http://127.0.0.2:30013/transactions", {'transaction': {}}),
-                call("http://127.0.0.3:30013/transactions", {'transaction': {}})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': {}}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': {}}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': {}})
             ], True)
 
     def test_request_block_whenIndexIsLatest_thenRequestsLatestBlockFromNode(self):

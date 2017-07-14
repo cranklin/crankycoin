@@ -225,7 +225,7 @@ class TestBlockchain(unittest.TestCase):
 
             resp = subject._check_hash_and_hash_pattern(mock_block)
 
-            self.assertTrue(resp)
+            self.assertIsNone(resp)
 
     def test_check_hash_and_hash_pattern_whenBlockHasInvalidHash_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -248,9 +248,9 @@ class TestBlockchain(unittest.TestCase):
             mock_block.timestamp = 12341234
             subject = Blockchain()
 
-            resp = subject._check_hash_and_hash_pattern(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidHash) as context:
+                subject._check_hash_and_hash_pattern(mock_block)
+                self.assertTrue("Block Hash Mismatch" in str(context.exception))
 
     def test_check_hash_and_hash_pattern_whenBlockHasInvalidPattern_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -273,9 +273,9 @@ class TestBlockchain(unittest.TestCase):
             mock_block.timestamp = 12341234
             subject = Blockchain()
 
-            resp = subject._check_hash_and_hash_pattern(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidHash) as context:
+                subject._check_hash_and_hash_pattern(mock_block)
+                self.assertTrue("Incompatible Block Hash" in str(context.exception))
 
     def test_check_index_and_previous_hash_whenBlockHasValidIndexAndPreviousHash_thenReturnsTrue(self):
         mock_block = Mock(Block)
@@ -290,7 +290,7 @@ class TestBlockchain(unittest.TestCase):
             subject = Blockchain()
             resp = subject._check_index_and_previous_hash(mock_block)
 
-            self.assertTrue(resp)
+            self.assertIsNone(resp)
 
     def test_check_index_and_previous_hash_whenBlockHasInValidIndex_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -303,9 +303,10 @@ class TestBlockchain(unittest.TestCase):
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block:
             subject = Blockchain()
-            resp = subject._check_index_and_previous_hash(mock_block)
 
-            self.assertFalse(resp)
+            with self.assertRaises(ChainContinuityError) as context:
+                subject._check_index_and_previous_hash(mock_block)
+                self.assertTrue("Incompatible block index" in str(context.exception))
 
     def test_check_index_and_previous_hash_whenBlockHasInValidPreviousHash_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -319,9 +320,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block:
             subject = Blockchain()
 
-            resp = subject._check_index_and_previous_hash(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(ChainContinuityError) as context:
+                subject._check_index_and_previous_hash(mock_block)
+                self.assertTrue("Incompatible block hash" in str(context.exception))
 
     def test_check_transactions_and_block_reward_whenValid_thenReturnsTrue(self):
         mock_block = Mock(Block)
@@ -334,7 +335,7 @@ class TestBlockchain(unittest.TestCase):
             'hash': "transaction_hash_one"
         }
         reward_transaction = {
-            'from': 0,
+            'from': "0",
             'timestamp': 1498933800,
             'to': 'to',
             'amount': 50,
@@ -354,7 +355,7 @@ class TestBlockchain(unittest.TestCase):
 
             resp = subject._check_transactions_and_block_reward(mock_block)
 
-            self.assertTrue(resp)
+            self.assertIsNone(resp)
 
     def test_check_transactions_and_block_reward_whenValidMultipleTransactionsFromSamePayer_thenReturnsTrue(self):
         mock_block = Mock(Block)
@@ -375,12 +376,12 @@ class TestBlockchain(unittest.TestCase):
             'hash': "transaction_hash_two"
         }
         reward_transaction = {
-            'from': 0,
+            'from': "0",
             'timestamp': 1498933800,
             'to': 'to',
             'amount': 50,
             'signature': '0',
-            'hash': 0
+            'hash': "0"
         }
         mock_block.index = 5
         mock_block.transactions = [transaction_one, transaction_two, reward_transaction]
@@ -395,7 +396,7 @@ class TestBlockchain(unittest.TestCase):
 
             resp = subject._check_transactions_and_block_reward(mock_block)
 
-            self.assertTrue(resp)
+            self.assertIsNone(resp)
 
     def test_check_transactions_and_block_reward_whenInvalidHash_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -425,9 +426,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
-            resp = subject._check_transactions_and_block_reward(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidTransactions) as context:
+                subject._check_transactions_and_block_reward(mock_block)
+                self.assertTrue("Incorrect transaction hash" in str(context.exception))
 
     def test_check_transactions_and_block_reward_whenDuplicateTransaction_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -457,9 +458,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
-            resp = subject._check_transactions_and_block_reward(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidTransactions) as context:
+                subject._check_transactions_and_block_reward(mock_block)
+                self.assertTrue("Transactions not valid.  Duplicate transaction detected" in str(context.exception))
 
     def test_check_transactions_and_block_reward_whenInsufficientBalanceFromPayer_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -498,9 +499,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
-            resp = subject._check_transactions_and_block_reward(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidTransactions) as context:
+                subject._check_transactions_and_block_reward(mock_block)
+                self.assertTrue("Insufficient funds" in str(context.exception))
 
     def test_check_transactions_and_block_reward_whenInvalidBlockReward_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -539,9 +540,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
-            resp = subject._check_transactions_and_block_reward(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidTransactions) as context:
+                subject._check_transactions_and_block_reward(mock_block)
+                self.assertTrue("Incorrect block reward" in str(context.exception))
 
     def test_check_transactions_and_block_reward_whenInvalidBlockRewardSource_thenReturnsFalse(self):
         mock_block = Mock(Block)
@@ -580,9 +581,9 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
-            resp = subject._check_transactions_and_block_reward(mock_block)
-
-            self.assertFalse(resp)
+            with self.assertRaises(InvalidTransactions) as context:
+                subject._check_transactions_and_block_reward(mock_block)
+                self.assertTrue("Incorrect block reward" in str(context.exception))
 
     def test_validate_block_whenValid_returnsTrue(self):
         mock_block = Mock(Block)
@@ -617,19 +618,21 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_genesis_block', return_value=genesis_block) as patched_get_genesis_block:
             subject = Blockchain()
 
-            with self.assertRaises(GenesisBlockMismatch):
-                subject.validate_block(invalid_genesis_block)
+            resp = subject.validate_block(invalid_genesis_block)
+
+            self.assertFalse(resp)
 
     def test_validate_block_whenInvalidHash_raisesInvalidHashException(self):
         mock_block = Mock(Block)
         mock_block.index = 51000
         mock_block.current_hash = "invalid_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, '_check_hash_and_hash_pattern', return_value=False) as patched_check_hash_and_hash_pattern:
+                patch.object(Blockchain, '_check_hash_and_hash_pattern', side_effect=InvalidHash(51000, "Invalid Hash")) as patched_check_hash_and_hash_pattern:
             subject = Blockchain()
 
-            with self.assertRaises(InvalidHash):
-                subject.validate_block(mock_block)
+            resp = subject.validate_block(mock_block)
+
+            self.assertFalse(resp)
 
     def test_validate_block_whenInvalidIncompatibleBlock_raisesChainContinuityErrorException(self):
         mock_block = Mock(Block)
@@ -637,12 +640,13 @@ class TestBlockchain(unittest.TestCase):
         mock_block.current_hash = "0000_current_hash"
         mock_block.previous_hash = "0000_previous_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, '_check_hash_and_hash_pattern', return_value=True) as patched_check_hash_and_hash_pattern, \
-                patch.object(Blockchain, '_check_index_and_previous_hash', return_value=False) as patched_check_index_and_previous_hash:
+                patch.object(Blockchain, '_check_hash_and_hash_pattern') as patched_check_hash_and_hash_pattern, \
+                patch.object(Blockchain, '_check_index_and_previous_hash', side_effect=ChainContinuityError(51000, "")) as patched_check_index_and_previous_hash:
             subject = Blockchain()
 
-            with self.assertRaises(ChainContinuityError):
-                subject.validate_block(mock_block)
+            resp = subject.validate_block(mock_block)
+
+            self.assertFalse(resp)
 
     def test_validate_block_whenInvalidTransactions_raisesInvalidTransactionsException(self):
         mock_block = Mock(Block)
@@ -650,13 +654,14 @@ class TestBlockchain(unittest.TestCase):
         mock_block.current_hash = "0000_current_hash"
         mock_block.previous_hash = "0000_previous_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, '_check_hash_and_hash_pattern', return_value=True) as patched_check_hash_and_hash_pattern, \
-                patch.object(Blockchain, '_check_index_and_previous_hash', return_value=True) as patched_check_index_and_previous_hash, \
-                patch.object(Blockchain, '_check_transactions_and_block_reward', return_value=False) as patched__check_transactions_and_block_reward:
+                patch.object(Blockchain, '_check_hash_and_hash_pattern') as patched_check_hash_and_hash_pattern, \
+                patch.object(Blockchain, '_check_index_and_previous_hash') as patched_check_index_and_previous_hash, \
+                patch.object(Blockchain, '_check_transactions_and_block_reward', side_effect=InvalidTransactions(51000, "")) as patched__check_transactions_and_block_reward:
             subject = Blockchain()
 
-            with self.assertRaises(InvalidTransactions):
-                subject.validate_block(mock_block)
+            resp = subject.validate_block(mock_block)
+
+            self.assertFalse(resp)
 
     def test_alter_chain_whenNewChainIsLonger_thenReplacesChainAndReturnsTrue(self):
         # difficult to unit test; Likely code smell
