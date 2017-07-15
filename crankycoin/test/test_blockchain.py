@@ -776,6 +776,7 @@ class TestBlockchain(unittest.TestCase):
             subject = Blockchain()
             mock_blocks = Mock()
             subject.blocks = mock_blocks
+            subject.blocks_lock = threading.Lock()
 
             resp = subject.add_block(mock_block)
 
