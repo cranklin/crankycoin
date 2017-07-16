@@ -1,6 +1,5 @@
 import datetime
 import hashlib
-import json
 import logging
 import pyelliptic
 import threading

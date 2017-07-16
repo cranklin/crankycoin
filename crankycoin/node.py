@@ -1,6 +1,5 @@
 import requests
 
-from block import *
 from blockchain import *
 from klein import Klein
 
