@@ -32,15 +32,23 @@ class Blockchain(object):
                 self.add_block(block)
 
     def get_genesis_block(self):
-        genesis_transaction = {
-                "from": "0",
-                "to": "0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596",
-                "amount": 50,
-                "signature": "0",
-                "timestamp": 0,
-                "hash": 0
+        genesis_transaction_one = {
+            "from": "0",
+            "to": "0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596",
+            "amount": 1000,
+            "signature": "0",
+            "timestamp": 0,
+            "hash": 0
         }
-        genesis_transactions = [genesis_transaction]
+        genesis_transaction_two = {
+            "from": "0",
+            "to": "0466f992cd361e24e4fa0eeca9a7ddbea1d257a2053dbe16aeb36ac155679a797bf89776903290d7c93e4b5ba49968fbf8ab8a49190f3d7cafe11cc6e925e489f6",
+            "amount": 1000,
+            "signature": "0",
+            "timestamp": 0,
+            "hash": 0
+        }
+        genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
         current_hash = self.calculate_block_hash(0, 0, 0, genesis_transactions, 0)
         genesis_block = Block(0, genesis_transactions, 0, current_hash, 0, 0);
         return genesis_block

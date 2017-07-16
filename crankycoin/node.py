@@ -207,6 +207,8 @@ class FullNode(NodeMixin):
         }
 
         for node in self.full_nodes:
+            if node == self.host:
+                continue
             url = BLOCKS_URL.format(node, FULL_NODE_PORT)
             try:
                 response = requests.post(url, json=data)
@@ -242,6 +244,8 @@ class FullNode(NodeMixin):
         }
 
         for node in self.full_nodes:
+            if node == self.host:
+                continue
             url = NODES_URL.format(node, FULL_NODE_PORT)
             try:
                 requests.post(url, json=data)

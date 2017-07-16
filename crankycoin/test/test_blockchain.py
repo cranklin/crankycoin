@@ -29,13 +29,21 @@ class TestBlockchain(unittest.TestCase):
 
     def test_get_genesis_block_whenCalled_thenCreatesAndReturnsBlockWithGenesisTransactions(self):
         genesis_transactions = [{
-            'from': '0',
-            'timestamp': 0,
-            'to': '0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596',
-            'amount': 50,
-            'signature': '0',
-            'hash': 0
-        }]
+                'from': '0',
+                'timestamp': 0,
+                'to': '0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596',
+                'amount': 1000,
+                'signature': '0',
+                'hash': 0
+            },
+            {
+                "from": "0",
+                "to": "0466f992cd361e24e4fa0eeca9a7ddbea1d257a2053dbe16aeb36ac155679a797bf89776903290d7c93e4b5ba49968fbf8ab8a49190f3d7cafe11cc6e925e489f6",
+                "amount": 1000,
+                "signature": "0",
+                "timestamp": 0,
+                "hash": 0
+            }]
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'calculate_block_hash', return_value="mock_block_hash") as patched_calculate_block_hash, \
