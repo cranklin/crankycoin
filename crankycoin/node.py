@@ -14,6 +14,7 @@ BALANCE_URL = "http://{}:{}/address/{}/balance"
 
 
 class NodeMixin(object):
+    # TODO: store the nodes in an external configuration file
     full_nodes = {"127.0.0.1"}
 
     def request_nodes(self, node, port):
@@ -77,6 +78,7 @@ class FullNode(NodeMixin):
         self.request_nodes_from_all()
         self.reward_address = reward_address
         self.broadcast_node(host)
+        self.full_nodes.add(host)
         if block_path is None:
             self.blockchain = Blockchain()
         else:
@@ -86,7 +88,7 @@ class FullNode(NodeMixin):
         thread.daemon = True
         thread.start()
         print "\n\nfull node server started...\n\n"
-        self.app.run("localhost", FULL_NODE_PORT)
+        self.app.run(host, FULL_NODE_PORT)
 
     def request_block(self, node, port, index="latest"):
         url = BLOCK_URL.format(node, port, index)
@@ -438,8 +440,8 @@ class FullNode(NodeMixin):
     @app.route('/block/<block_id>', methods=['GET'])
     def get_block(self, request, block_id):
         if block_id == "latest":
-            return json.dumps(self.blockchain.get_latest_block())
-        return json.dumps(self.blockchain.get_block_by_index(block_id))
+            return json.dumps(self.blockchain.get_latest_block().__dict__)
+        return json.dumps(self.blockchain.get_block_by_index(block_id).__dict__)
 
 
 if __name__ == "__main__":
