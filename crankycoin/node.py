@@ -1,3 +1,4 @@
+import grequests
 import requests
 
 from blockchain import *
@@ -203,7 +204,7 @@ class FullNode(NodeMixin):
         self.request_nodes_from_all()
         bad_nodes = set()
         data = {
-            "block": block.as_json(),
+            "block": block.to_json(),
             "host": self.host
         }
 

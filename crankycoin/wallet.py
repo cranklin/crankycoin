@@ -7,6 +7,7 @@ import requests
 
 from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
 
+
 class Client(NodeMixin):
 
     __private_key__ = None

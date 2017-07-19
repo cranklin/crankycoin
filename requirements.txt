@@ -1,5 +1,6 @@
 ecdsa==0.13
+grequests==0.3.0
+klein==17.2.0
 pyelliptic==1.5.7
 requests==2.14.2
-klein==17.2.0
 virtualenv==15.1.0
