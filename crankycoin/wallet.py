@@ -6,6 +6,7 @@ import random
 import requests
 
 from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
+from transaction import *
 
 
 class Client(NodeMixin):
@@ -70,21 +71,12 @@ class Client(NodeMixin):
         return None
 
     def create_transaction(self, to, amount):
-        timestamp = datetime.datetime.utcnow().isoformat()
-        signature = self.sign(
-            self.generate_signable_transaction(
-                self.get_pubkey(),
-                to,
-                amount,
-                timestamp))
-        transaction = {
-            "from": self.get_pubkey(),
-            "to": to,
-            "amount": amount,
-            "signature": signature,
-            "timestamp": timestamp,
-        }
-        transaction["hash"] = self.calculate_transaction_hash(transaction)
+        transaction = Transaction(
+            self.get_pubkey(),
+            to,
+            amount
+        )
+        transaction.sign(self.get_privkey())
         return self.broadcast_transaction(transaction)
 
     def calculate_transaction_hash(self, transaction):

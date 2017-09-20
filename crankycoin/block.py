@@ -3,12 +3,14 @@ import json
 
 class Block(object):
 
+    transactions = []
+
     def __init__(self, index, transactions, previous_hash, current_hash, timestamp, nonce):
         """
         :param index: index # of block
         :type index: int
         :param transactions: list of transactions
-        :type transactions: list of transaction dicts
+        :type transactions: list of transaction objects
         :param previous_hash: previous block hash
         :type previous_hash: str
         :param current_hash: current block hash

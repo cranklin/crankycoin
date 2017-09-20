@@ -20,3 +20,6 @@ class InvalidTransactions(BlockchainException):
 class GenesisBlockMismatch(BlockchainException):
     pass
 
+
+class InvalidTransactionHash(Exception):
+    pass

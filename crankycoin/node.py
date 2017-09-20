@@ -3,6 +3,7 @@ import requests
 
 from blockchain import *
 from klein import Klein
+from transaction import *
 
 FULL_NODE_PORT = "30013"
 NODES_URL = "http://{}:{}/nodes"
@@ -53,7 +54,7 @@ class NodeMixin(object):
         self.request_nodes_from_all()
         bad_nodes = set()
         data = {
-            "transaction": transaction
+            "transaction": transaction.to_json()
         }
 
         for node in self.full_nodes:
@@ -353,7 +354,8 @@ class FullNode(NodeMixin):
     @app.route('/transactions', methods=['POST'])
     def post_transactions(self, request):
         body = json.loads(request.content.read())
-        return json.dumps({'success': self.blockchain.push_unconfirmed_transaction(body['transaction'])})
+        transaction = Transaction.from_json(body['transaction'])
+        return json.dumps({'success': self.blockchain.push_unconfirmed_transaction(transaction)})
 
     @app.route('/transactions', methods=['GET'])
     def get_transactions(self, request):
