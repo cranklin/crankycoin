@@ -37,7 +37,6 @@ class Transaction(object):
         :return: sha-256 hash
         :rtype: str
         """
-        # pop hash so method can calculate transactions pre or post hash
         data = {
             "source": self.source,
             "destination": self.destination,

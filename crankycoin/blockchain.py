@@ -47,23 +47,6 @@ class Blockchain(object):
         genesis_block = Block(0, genesis_transactions, 0, current_hash, 0, 0);
         return genesis_block
 
-    def calculate_transaction_hash(self, transaction):
-        """
-        Calculates sha-256 hash of transaction
-
-        :param transaction: transaction
-        :type transaction: dict(from, to, amount, timestamp, signature, (hash))
-
-        :return: sha256 hash
-        :rtype: str
-        """
-        # pop hash so method can calculate transactions pre or post hash
-        data = transaction.copy()
-        data.pop("hash", None)
-        data_json = json.dumps(data, sort_keys=True)
-        hash_object = hashlib.sha256(data_json)
-        return hash_object.hexdigest()
-
     def calculate_block_hash(self, index, previous_hash, timestamp, transactions, nonce=0):
         """
         Calculates sha-256 hash of block based on index, previous_hash, timestamp, transactions, and nonce
@@ -119,24 +102,17 @@ class Blockchain(object):
         # transaction : dict(from, to, amount, timestamp, signature, hash)
         payers = dict()
         for transaction in block.transactions[:-1]:
-            if transaction["hash"] != self.calculate_transaction_hash(transaction):
+            if transaction.tx_hash != transaction.calculate_tx_hash():
                 raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect transaction hash")
             else:
-                if self.find_duplicate_transactions(transaction["hash"]):
+                if self.find_duplicate_transactions(transaction.tx_hash):
                     raise InvalidTransactions(block.index, "Transactions not valid.  Duplicate transaction detected")
-            if not self.verify_signature(
-                    transaction["signature"],
-                    ":".join((
-                        transaction["from"],
-                        transaction["to"],
-                        str(transaction["amount"]),
-                        str(transaction["timestamp"]))),
-                    transaction["from"]):
+            if not transaction.verify():
                 raise InvalidTransactions(block.index, "Transactions not valid.  Invalid Transaction signature")
-            if transaction["from"] in payers:
-                payers[transaction["from"]] += transaction["amount"]
+            if transaction.source in payers:
+                payers[transaction.source] += transaction.amount
             else:
-                payers[transaction["from"]] = transaction["amount"]
+                payers[transaction.source] = transaction.amount
         for key in payers:
             balance = self.get_balance(key)
             if payers[key] > balance:
@@ -144,7 +120,7 @@ class Blockchain(object):
         # last transaction is block reward
         reward_transaction = block.transactions[-1]
         reward_amount = self.get_reward(block.index)
-        if reward_transaction["amount"] != reward_amount or reward_transaction["from"] != "0":
+        if reward_transaction.amount != reward_amount or reward_transaction.source != "0":
             raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect block reward")
         return
 
@@ -198,20 +174,13 @@ class Blockchain(object):
             unconfirmed_transaction = self.pop_next_unconfirmed_transaction()
             if unconfirmed_transaction is None:
                 break
-            if unconfirmed_transaction["hash"] != self.calculate_transaction_hash(unconfirmed_transaction):
+            if unconfirmed_transaction.tx_hash != unconfirmed_transaction.calculate_tx_hash():
                 continue
-            if unconfirmed_transaction["hash"] in [transaction["hash"] for transaction in transactions]:
+            if unconfirmed_transaction.tx_hash in [transaction.tx_hash for transaction in transactions]:
                 continue
-            if self.find_duplicate_transactions(unconfirmed_transaction["hash"]):
+            if self.find_duplicate_transactions(unconfirmed_transaction.tx_hash):
                 continue
-            if not self.verify_signature(
-                    unconfirmed_transaction["signature"],
-                    ":".join((
-                            unconfirmed_transaction["from"],
-                            unconfirmed_transaction["to"],
-                            str(unconfirmed_transaction["amount"]),
-                            str(unconfirmed_transaction["timestamp"]))),
-                    unconfirmed_transaction["from"]):
+            if not unconfirmed_transaction.verify():
                 continue
 
             transactions.append(unconfirmed_transaction)
@@ -227,7 +196,7 @@ class Blockchain(object):
             "timestamp": datetime.datetime.utcnow().isoformat()
         }
 
-        reward_transaction["hash"] = self.calculate_transaction_hash(reward_transaction)
+        reward_transaction.tx_hash = reward_transaction.calculate_tx_hash()
         transactions.append(reward_transaction)
 
         timestamp = datetime.datetime.utcnow().isoformat()
@@ -255,7 +224,7 @@ class Blockchain(object):
         transactions = []
         for block in self.blocks:
             for transaction in block.transactions:
-                if transaction["from"] == address or transaction["to"] == address:
+                if transaction.source == address or transaction.destination == address:
                     transactions.append(transaction)
         return transactions
 
@@ -263,22 +232,22 @@ class Blockchain(object):
         balance = 0
         for block in self.blocks:
             for transaction in block.transactions:
-                if transaction["from"] == address:
-                    balance -= transaction["amount"]
-                if transaction["to"] == address:
-                    balance += transaction["amount"]
+                if transaction.source == address:
+                    balance -= transaction.amount
+                if transaction.destination == address:
+                    balance += transaction.amount
         return balance
 
     def find_duplicate_transactions(self, transaction_hash):
         for block in self.blocks:
             for transaction in block.transactions:
-                if transaction["hash"] == transaction_hash:
+                if transaction.tx_hash == transaction_hash:
                     return block.index
         return False
 
     def recycle_transactions(self, block):
         for transaction in block.transactions[:-1]:
-            if not self.find_duplicate_transactions(transaction["hash"]):
+            if not self.find_duplicate_transactions(transaction.tx_hash):
                 self.push_unconfirmed_transaction(transaction)
         return
 
