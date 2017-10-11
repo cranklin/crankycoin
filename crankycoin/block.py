@@ -1,3 +1,5 @@
+import time
+import hashlib
 import json
 
 
@@ -19,25 +21,32 @@ class Block(object):
         :type timestamp: int
         :param nonce: nonce
         :type nonce: int
-
-        transaction
-        :type transaction: dict(from, to, amount, timestamp, signature, hash)
-        :type from: string
-        :type to: string
-        :type amount: float
-        :type timestamp: int
-        :type signature: string
-        :type hash: string
         """
         self.index = index
         self.transactions = transactions
         self.previous_hash = previous_hash
-        self.current_hash = current_hash
-        self.timestamp = timestamp
         self.nonce = nonce
+        self.timestamp = timestamp if timestamp is not None else int(time.time())
+        self.current_hash = current_hash if current_hash is not None else self.calculate_block_hash()
+
+    def calculate_block_hash(self):
+        """
+        :return: sha256 hash
+        :rtype: str
+        """
+        data = {
+            "index": self.index,
+            "previous_hash": self.previous_hash,
+            "timestamp": self.timestamp,
+            "transactions": self.transactions,
+            "nonce": self.nonce
+        }
+        data_json = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
+        hash_object = hashlib.sha256(data_json)
+        return hash_object.hexdigest()
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
     def __repr__(self):
         return "<Crankycoin Block {}>".format(self.index)

@@ -1,8 +1,8 @@
-import datetime
 import hashlib
 import logging
 import pyelliptic
 import threading
+import time
 
 from block import *
 from errors import *
@@ -43,8 +43,7 @@ class Blockchain(object):
             1000
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
-        current_hash = self.calculate_block_hash(0, 0, 0, genesis_transactions, 0)
-        genesis_block = Block(0, genesis_transactions, 0, current_hash, 0, 0);
+        genesis_block = Block(0, genesis_transactions, 0, None, 0, 0);
         return genesis_block
 
     def calculate_block_hash(self, index, previous_hash, timestamp, transactions, nonce=0):
@@ -82,7 +81,7 @@ class Blockchain(object):
         return
 
     def _check_hash_and_hash_pattern(self, block):
-        block_hash = self.calculate_block_hash(block.index, block.previous_hash, block.timestamp, block.transactions, block.nonce)
+        block_hash = block.calculate_block_hash()
         if block_hash != block.current_hash:
             raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block.current_hash))
         if block_hash[:4] != "0000":
@@ -193,13 +192,13 @@ class Blockchain(object):
             "to": reward_address,
             "amount": self.get_reward(new_block_id),
             "signature": "0",
-            "timestamp": datetime.datetime.utcnow().isoformat()
+            "timestamp": int(time.time())
         }
 
         reward_transaction.tx_hash = reward_transaction.calculate_tx_hash()
         transactions.append(reward_transaction)
 
-        timestamp = datetime.datetime.utcnow().isoformat()
+        timestamp = int(time.time())
 
         def new_hash(nonce):
             return self.calculate_block_hash(new_block_id, previous_hash, timestamp, transactions, nonce)

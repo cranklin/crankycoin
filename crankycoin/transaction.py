@@ -1,7 +1,7 @@
-import datetime
 import hashlib
 import json
 import pyelliptic
+import time
 
 from errors import *
 
@@ -12,7 +12,7 @@ class Transaction(object):
         self.source = source
         self.destination = destination
         self.amount = amount
-        self.timestamp = datetime.datetime.utcnow().isoformat()
+        self.timestamp = int(time.time())
         self.signature = signature
         self.tx_hash = tx_hash
         if signature is not None:
@@ -71,7 +71,7 @@ class Transaction(object):
             .verify(self.signature.decode('hex'), self.to_signable())
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
     def __repr__(self):
         return "<Transaction {}>".format(self.tx_hash)
