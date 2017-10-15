@@ -7,7 +7,7 @@ class Block(object):
 
     transactions = []
 
-    def __init__(self, index, transactions, previous_hash, current_hash, timestamp, nonce):
+    def __init__(self, index, transactions, previous_hash, timestamp, nonce=0):
         """
         :param index: index # of block
         :type index: int
@@ -22,24 +22,53 @@ class Block(object):
         :param nonce: nonce
         :type nonce: int
         """
-        self.index = index
-        self.transactions = transactions
-        self.previous_hash = previous_hash
-        self.nonce = nonce
-        self.timestamp = timestamp if timestamp is not None else int(time.time())
-        self.current_hash = current_hash if current_hash is not None else self.calculate_block_hash()
+        self._index = index
+        self._transactions = transactions
+        self._previous_hash = previous_hash
+        self._nonce = nonce
+        self._timestamp = timestamp if timestamp is not None else int(time.time())
+        self._current_hash = self._calculate_block_hash()
 
-    def calculate_block_hash(self):
+    @property
+    def index(self):
+        return self._index
+
+    @property
+    def transactions(self):
+        return self._transactions
+
+    @property
+    def previous_hash(self):
+        return self._previous_hash
+
+    @property
+    def timestamp(self):
+        return self._timestamp
+
+    @property
+    def current_hash(self):
+        return self._current_hash
+
+    @property
+    def nonce(self):
+        return self._nonce
+
+    @nonce.setter
+    def nonce(self, value):
+        self._nonce = value
+        self._current_hash = self._calculate_block_hash()
+
+    def _calculate_block_hash(self):
         """
         :return: sha256 hash
         :rtype: str
         """
         data = {
-            "index": self.index,
-            "previous_hash": self.previous_hash,
-            "timestamp": self.timestamp,
-            "transactions": self.transactions,
-            "nonce": self.nonce
+            "index": self._index,
+            "previous_hash": self._previous_hash,
+            "timestamp": self._timestamp,
+            "transactions": self._transactions,
+            "nonce": self._nonce
         }
         data_json = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
         hash_object = hashlib.sha256(data_json)
@@ -49,7 +78,7 @@ class Block(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
     def __repr__(self):
-        return "<Crankycoin Block {}>".format(self.index)
+        return "<Crankycoin Block {}>".format(self._index)
 
     def __str__(self):
         return str(self.__dict__)

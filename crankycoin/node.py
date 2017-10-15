@@ -102,10 +102,11 @@ class FullNode(NodeMixin):
                     block_dict['index'],
                     block_dict['transactions'],
                     block_dict['previous_hash'],
-                    block_dict['current_hash'],
                     block_dict['timestamp'],
                     block_dict['nonce']
                 )
+                if block.current_hash != block_dict['current_hash']:
+                    raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block_dict['current_hash']))
                 return block
         except requests.exceptions.RequestException as re:
             pass
@@ -140,10 +141,11 @@ class FullNode(NodeMixin):
                         block_dict['index'],
                         block_dict['transactions'],
                         block_dict['previous_hash'],
-                        block_dict['current_hash'],
                         block_dict['timestamp'],
                         block_dict['nonce']
                     )
+                    if block.current_hash != block_dict['current_hash']:
+                        raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block_dict['current_hash']))
                     blocks.append(block)
                 return blocks
         except requests.exceptions.RequestException as re:
@@ -162,10 +164,11 @@ class FullNode(NodeMixin):
                         block_dict['index'],
                         block_dict['transactions'],
                         block_dict['previous_hash'],
-                        block_dict['current_hash'],
                         block_dict['timestamp'],
                         block_dict['nonce']
                     )
+                    if block.current_hash != block_dict['current_hash']:
+                        raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block_dict['current_hash']))
                     blocks.append(block)
                 return blocks
         except requests.exceptions.RequestException as re:
@@ -378,10 +381,12 @@ class FullNode(NodeMixin):
             remote_block['index'],
             remote_block['transactions'],
             remote_block['previous_hash'],
-            remote_block['current_hash'],
             remote_block['timestamp'],
             remote_block['nonce']
         )
+        if block.current_hash != remote_block['current_hash']:
+            request.setResponseCode(406)  # not acceptable
+            return json.dumps({'message': 'block rejected due to invalid hash'})
         my_latest_block = self.blockchain.get_latest_block()
 
         if block.index > my_latest_block.index + 1:

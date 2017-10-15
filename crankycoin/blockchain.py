@@ -43,37 +43,8 @@ class Blockchain(object):
             1000
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
-        genesis_block = Block(0, genesis_transactions, 0, None, 0, 0);
+        genesis_block = Block(0, genesis_transactions, 0, 0, 0);
         return genesis_block
-
-    def calculate_block_hash(self, index, previous_hash, timestamp, transactions, nonce=0):
-        """
-        Calculates sha-256 hash of block based on index, previous_hash, timestamp, transactions, and nonce
-
-        :param index: index of block to hash
-        :type index: int
-        :param previous_hash: previous block hash
-        :type previous_hash: str
-        :param timestamp: timestamp of block mined
-        :type timestamp: int
-        :param transactions: list of transactions
-        :type transactions: list of transaction dicts
-        :param nonce: nonce
-        :type nonce: int
-
-        :return: sha256 hash
-        :rtype: str
-        """
-        data = {
-            "index": index,
-            "previous_hash": previous_hash,
-            "timestamp": timestamp,
-            "transactions": transactions,
-            "nonce": nonce
-        }
-        data_json = json.dumps(data, sort_keys=True)
-        hash_object = hashlib.sha256(data_json)
-        return hash_object.hexdigest()
 
     def _check_genesis_block(self, block):
         if block != self.get_genesis_block():
@@ -81,10 +52,7 @@ class Blockchain(object):
         return
 
     def _check_hash_and_hash_pattern(self, block):
-        block_hash = block.calculate_block_hash()
-        if block_hash != block.current_hash:
-            raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block.current_hash))
-        if block_hash[:4] != "0000":
+        if block.current_hash[:4] != "0000":
             raise InvalidHash(block.index, "Incompatible Block Hash: {}".format(block.current_hash))
         return
 
@@ -101,7 +69,7 @@ class Blockchain(object):
         # transaction : dict(from, to, amount, timestamp, signature, hash)
         payers = dict()
         for transaction in block.transactions[:-1]:
-            if transaction.tx_hash != transaction.calculate_tx_hash():
+            if transaction.tx_hash != transaction._calculate_tx_hash():
                 raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect transaction hash")
             else:
                 if self.find_duplicate_transactions(transaction.tx_hash):
@@ -200,11 +168,9 @@ class Blockchain(object):
 
         timestamp = int(time.time())
 
-        def new_hash(nonce):
-            return self.calculate_block_hash(new_block_id, previous_hash, timestamp, transactions, nonce)
-
         i = 0
-        while new_hash(i)[:4] != "0000":
+        block = Block(new_block_id, transactions, previous_hash, timestamp, i)
+        while block.current_hash[:4] != "0000":
             latest_block = self.get_latest_block()
             if latest_block.index >= new_block_id or latest_block.current_hash != previous_hash:
                 # Next block in sequence was mined by another node.  Stop mining current block.
@@ -215,8 +181,7 @@ class Blockchain(object):
                         self.push_unconfirmed_transaction(transaction)
                 return None
             i += 1
-
-        block = Block(new_block_id, transactions, previous_hash, new_hash(i), timestamp, i)
+            block.nonce = i
         return block
 
     def get_transaction_history(self, address):
