@@ -74,7 +74,7 @@ class Transaction(object):
 
     def sign(self, private_key):
         signature = pyelliptic\
-            .ECC(curve='secp256k1', privkey=private_key, pubkey=self._source)\
+            .ECC(curve='secp256k1', privkey=private_key, pubkey=self._source.decode('hex'))\
             .sign(self.to_signable())\
             .encode('hex')
         self._signature = signature
@@ -95,7 +95,8 @@ class Transaction(object):
             .verify(self._signature.decode('hex'), self.to_signable())
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
+        return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
+                          sort_keys=True)
 
     def __repr__(self):
         return "<Transaction {}>".format(self._tx_hash)

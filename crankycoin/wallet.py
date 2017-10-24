@@ -75,28 +75,8 @@ class Client(NodeMixin):
             to,
             amount
         )
-        transaction.sign(self.get_privkey())
+        transaction.sign(self.get_privkey(False))
         return self.broadcast_transaction(transaction)
-
-    def calculate_transaction_hash(self, transaction):
-        """
-        Calculates sha-256 hash of transaction
-
-        :param transaction: transaction
-        :type transaction: dict(from, to, amount, timestamp, signature, (hash))
-
-        :return: sha256 hash
-        :rtype: str
-        """
-        # pop hash so method can calculate transactions pre or post hash
-        data = transaction.copy()
-        data.pop("hash", None)
-        data_json = json.dumps(data, sort_keys=True)
-        hash_object = hashlib.sha256(data_json)
-        return hash_object.hexdigest()
-
-    def generate_signable_transaction(self, from_address, to_address, amount, timestamp):
-        return ":".join((from_address, to_address, str(amount), str(timestamp)))
 
 
 if __name__ == "__main__":

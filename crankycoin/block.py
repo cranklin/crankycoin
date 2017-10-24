@@ -67,15 +67,15 @@ class Block(object):
             "index": self._index,
             "previous_hash": self._previous_hash,
             "timestamp": self._timestamp,
-            "transactions": self._transactions,
+            "transactions": [t.tx_hash for t in self._transactions],
             "nonce": self._nonce
         }
-        data_json = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
-        hash_object = hashlib.sha256(data_json)
+        hash_object = hashlib.sha256(json.dumps(data))
         return hash_object.hexdigest()
 
     def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
+        return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
+                          sort_keys=True)
 
     def __repr__(self):
         return "<Crankycoin Block {}>".format(self._index)

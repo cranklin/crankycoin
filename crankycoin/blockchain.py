@@ -138,10 +138,16 @@ class Blockchain(object):
         previous_hash = latest_block.current_hash
 
         for i in range(0, self.MAX_TRANSACTIONS_PER_BLOCK):
-            unconfirmed_transaction = self.pop_next_unconfirmed_transaction()
-            if unconfirmed_transaction is None:
+            unconfirmed_transaction_json = self.pop_next_unconfirmed_transaction()
+            if unconfirmed_transaction_json is None:
                 break
-            if unconfirmed_transaction.tx_hash != unconfirmed_transaction.calculate_tx_hash():
+            unconfirmed_transaction = Transaction(
+                unconfirmed_transaction_json.get('source'),
+                unconfirmed_transaction_json.get('destination'),
+                unconfirmed_transaction_json.get('amount'),
+                unconfirmed_transaction_json.get('signature')
+            )
+            if unconfirmed_transaction.tx_hash != unconfirmed_transaction_json.get('tx_hash'):
                 continue
             if unconfirmed_transaction.tx_hash in [transaction.tx_hash for transaction in transactions]:
                 continue
@@ -155,15 +161,13 @@ class Blockchain(object):
         if len(transactions) < 1:
             return None
 
-        reward_transaction = {
-            "from": "0",
-            "to": reward_address,
-            "amount": self.get_reward(new_block_id),
-            "signature": "0",
-            "timestamp": int(time.time())
-        }
+        reward_transaction = Transaction(
+            "0",
+            reward_address,
+            self.get_reward(new_block_id),
+            "0"
+        )
 
-        reward_transaction.tx_hash = reward_transaction.calculate_tx_hash()
         transactions.append(reward_transaction)
 
         timestamp = int(time.time())

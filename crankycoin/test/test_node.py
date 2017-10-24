@@ -1,5 +1,5 @@
 import unittest
-from mock import patch, Mock, MagicMock, call
+from mock import patch, Mock, MagicMock, call, PropertyMock
 from crankycoin.node import *
 
 
@@ -55,10 +55,12 @@ class TestNode(unittest.TestCase):
             self.assertEqual(node.full_nodes, {"127.0.0.2", "127.0.0.1", "127.0.0.3", "127.0.0.4", "127.0.0.5", "127.0.1.1", "127.0.1.2"})
 
     def test_broadcast_transaction_thenBroadcastsToAllNodes(self):
-        transaction = {}
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
                 patch.object(FullNode, 'request_nodes_from_all') as patched_request_nodes_from_all, \
+                patch("crankycoin.time.time", return_value="1508823223") as patched_time_time, \
                 patch("crankycoin.requests.post") as patched_requests:
+
+            transaction = Transaction("source", "destination", 0)
             node = FullNode("127.0.0.1", "reward_address")
             node.full_nodes = {"127.0.0.1", "127.0.0.2", "127.0.0.3"}
 
@@ -66,16 +68,18 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", json={'transaction': {}}),
-                call("http://127.0.0.2:30013/transactions", json={'transaction': {}}),
-                call("http://127.0.0.3:30013/transactions", json={'transaction': {}})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
             ], True)
 
     def test_broadcast_transaction_whenRequestException_thenFailsGracefully(self):
-        transaction = {}
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
                 patch.object(FullNode, 'request_nodes_from_all') as patched_request_nodes_from_all, \
+                patch("crankycoin.time.time", return_value="1508823223") as patched_time_time, \
                 patch("crankycoin.requests.post", side_effect=requests.exceptions.RequestException()) as patched_requests:
+
+            transaction = Transaction("source", "destination", 0)
             node = FullNode("127.0.0.1", "reward_address")
             node.full_nodes = {"127.0.0.1", "127.0.0.2", "127.0.0.3"}
 
@@ -83,9 +87,9 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", json={'transaction': {}}),
-                call("http://127.0.0.2:30013/transactions", json={'transaction': {}}),
-                call("http://127.0.0.3:30013/transactions", json={'transaction': {}})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
             ], True)
 
     def test_request_block_whenIndexIsLatest_thenRequestsLatestBlockFromNode(self):
@@ -94,7 +98,9 @@ class TestNode(unittest.TestCase):
         mock_response.json.return_value = '{"nonce": 12345, "index": 35, "transactions": [], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
 
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
+                patch("crankycoin.node.Block.current_hash", new_callable=PropertyMock) as patched_block_current_hash, \
                 patch("crankycoin.requests.get", return_value=mock_response) as patched_requests:
+            patched_block_current_hash.return_value = "current_hash"
             node = FullNode("127.0.0.1", "reward_address")
 
             block = node.request_block("127.0.0.2", "30013", "latest")
@@ -114,7 +120,9 @@ class TestNode(unittest.TestCase):
         mock_response.json.return_value = '{"nonce": 12345, "index": 29, "transactions": [], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
 
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
+                patch("crankycoin.node.Block.current_hash", new_callable=PropertyMock) as patched_block_current_hash, \
                 patch("crankycoin.requests.get", return_value=mock_response) as patched_requests:
+            patched_block_current_hash.return_value = "current_hash"
             node = FullNode("127.0.0.1", "reward_address")
 
             block = node.request_block("127.0.0.2", "30013", 29)

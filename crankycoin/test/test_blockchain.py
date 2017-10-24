@@ -820,15 +820,13 @@ class TestBlockchain(unittest.TestCase):
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
  \
-                patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction, \
-                patch.object(Blockchain, 'calculate_transaction_hash', return_value="transaction_hash") as patched_calculate_transaction_hash:
+                patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction:
             subject = Blockchain()
 
             resp = subject.mine_block("reward_address")
 
             self.assertIsNone(resp)
             self.assertEqual(patched_pop_next_unconfirmed_transaction.call_count, 2)
-            patched_calculate_transaction_hash.assert_called_once_with(transaction)
 
     def test_mine_block_whenOneDuplicateTransaction_thenReturnsNone(self):
         transaction = {
@@ -839,6 +837,7 @@ class TestBlockchain(unittest.TestCase):
             'signature': 'signature',
             'hash': 'transaction_hash'
         }
+
         block_id_with_same_transaction = 38
         latest_block = Mock(Block)
         latest_block.index = 35
@@ -847,7 +846,7 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
  \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction, \
-                patch.object(Blockchain, 'calculate_transaction_hash', return_value="transaction_hash") as patched_calculate_transaction_hash, \
+                patch.object(Transaction, '_calculate_tx_hash', return_value="transaction_hash") as patched_calculate_tx_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=block_id_with_same_transaction) as patched_find_duplicate_transactions:
             subject = Blockchain()
 
@@ -855,7 +854,7 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertIsNone(resp)
             self.assertEqual(patched_pop_next_unconfirmed_transaction.call_count, 2)
-            patched_calculate_transaction_hash.assert_called_once_with(transaction)
+            self.assertEqual(patched_calculate_tx_hash.call_count, 1)
             patched_find_duplicate_transactions.asssert_called_once_with("transaction_hash")
 
     def test_mine_block_whenDuplicateTransactionsInUnconfirmedPool_thenMinesOneOfThemAndReturnsBlock(self):

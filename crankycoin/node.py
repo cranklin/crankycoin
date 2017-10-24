@@ -67,7 +67,7 @@ class NodeMixin(object):
             self.remove_node(node)
         bad_nodes.clear()
         return
-        # convert to grequests and return list of responses
+        # TODO: convert to grequests and return list of responses
 
 
 class FullNode(NodeMixin):
@@ -106,7 +106,7 @@ class FullNode(NodeMixin):
                     block_dict['nonce']
                 )
                 if block.current_hash != block_dict['current_hash']:
-                    raise InvalidHash(block.index, "Block Hash Mismatch: {}".format(block_dict['current_hash']))
+                    raise InvalidHash(block.index, "Block Hash Mismatch: {} {}".format(block_dict['current_hash'], block.current_hash))
                 return block
         except requests.exceptions.RequestException as re:
             pass
