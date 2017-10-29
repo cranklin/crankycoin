@@ -69,11 +69,8 @@ class Blockchain(object):
         # transaction : dict(from, to, amount, timestamp, signature, hash)
         payers = dict()
         for transaction in block.transactions[:-1]:
-            if transaction.tx_hash != transaction._calculate_tx_hash():
-                raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect transaction hash")
-            else:
-                if self.find_duplicate_transactions(transaction.tx_hash):
-                    raise InvalidTransactions(block.index, "Transactions not valid.  Duplicate transaction detected")
+            if self.find_duplicate_transactions(transaction.tx_hash):
+                raise InvalidTransactions(block.index, "Transactions not valid.  Duplicate transaction detected")
             if not transaction.verify():
                 raise InvalidTransactions(block.index, "Transactions not valid.  Invalid Transaction signature")
             if transaction.source in payers:
