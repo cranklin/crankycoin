@@ -48,6 +48,7 @@ class TestBlockchain(unittest.TestCase):
 
             patched_Block.assert_called_once_with(0, genesis_transactions, 0, 0, 0)
 
+    @unittest.skip("Deprecated test.  Leaving here until a replacement is created in test_transaction")
     def test_calculate_transaction_hash_whenCalledWithSameTransactions_thenReturnsConsistentSha256Hash(self):
         transaction_one = {
             'from': 'from',
@@ -83,6 +84,7 @@ class TestBlockchain(unittest.TestCase):
             self.assertEqual(transaction_hash_one, transaction_hash_three)
             self.assertEquals(1, len(set([transaction_hash_one, transaction_hash_two, transaction_hash_three])))
 
+    @unittest.skip("Deprecated test.  Leaving here until a replacement is created in test_transaction")
     def test_calculate_transaction_hash_whenCalledWithDifferentTransactions_thenReturnsDifferentSha256Hash(self):
         transaction_one = {
             'from': 'from',
@@ -129,6 +131,7 @@ class TestBlockchain(unittest.TestCase):
             self.assertNotEqual(transaction_one, transaction_hash_four)
             self.assertEquals(4, len(set([transaction_hash_one, transaction_hash_two, transaction_hash_three, transaction_hash_four])))
 
+    @unittest.skip("Deprecated test.  Leaving here until a replacement is created in test_block")
     def test_calculate_block_hash_whenCalledWithSameBlockData_thenReturnsConsistentSha256Hash(self):
         transaction_one = {
             'from': 'from',
@@ -154,6 +157,7 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertEqual(block_hash_one, block_hash_two)
 
+    @unittest.skip("Deprecated test.  Leaving here until a replacement is created in test_block")
     def test_calculate_block_hash_whenCalledWithDifferentBlockData_thenReturnsDifferentSha256Hash(self):
         transaction_one = {
             'from': 'from',
@@ -206,17 +210,16 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_hash_and_hash_pattern_whenBlockHasValidHashAndPattern_thenReturnsTrue(self):
         mock_block = Mock(Block)
-        transaction = {
-            'from': 'from',
-            'timestamp': 0,
-            'to': 'to',
-            'amount': 50,
-            'signature': 'signature',
-            'hash': 0
-        }
 
-        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_block_hash', return_value="0000_valid_block_hash") as patched_calculate_block_hash:
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 50
+        transaction.signature = "signature"
+        transaction.tx_hash = "transaction_hash"
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             mock_block.current_hash = "0000_valid_block_hash"
             mock_block.index = 35
             mock_block.previous_hash = "0000_valid_previous_hash"
@@ -229,19 +232,20 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertIsNone(resp)
 
+    @unittest.skip("block hashes are now validated when instantiating a block object."
+                   "Leaving this until a replacement is created in test_block")
     def test_check_hash_and_hash_pattern_whenBlockHasInvalidHash_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction = {
-            'from': 'from',
-            'timestamp': 0,
-            'to': 'to',
-            'amount': 50,
-            'signature': 'signature',
-            'hash': 0
-        }
 
-        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_block_hash', return_value="0000_wrong_block_hash") as patched_calculate_block_hash:
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 50
+        transaction.signature = "signature"
+        transaction.tx_hash = "transaction_hash"
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             mock_block.current_hash = "0000_valid_block_hash"
             mock_block.index = 35
             mock_block.previous_hash = "0000_valid_previous_hash"
@@ -256,17 +260,16 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_hash_and_hash_pattern_whenBlockHasInvalidPattern_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction = {
-            'from': 'from',
-            'timestamp': 0,
-            'to': 'to',
-            'amount': 50,
-            'signature': 'signature',
-            'hash': 0
-        }
 
-        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_block_hash', return_value="invalid_block_hash") as patched_calculate_block_hash:
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 50
+        transaction.signature = "signature"
+        transaction.tx_hash = "transaction_hash"
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
             mock_block.current_hash = "invalid_block_hash"
             mock_block.index = 35
             mock_block.previous_hash = "0000_valid_previous_hash"
@@ -399,6 +402,8 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertIsNone(resp)
 
+    @unittest.skip("transaction hashes are now validated when instantiating a transaction object.  "
+                   "Leaving this until a replacement is created in test_transaction")
     def test_check_transactions_and_block_reward_whenInvalidHash_thenReturnsFalse(self):
         mock_block = Mock(Block)
         transaction = Mock(Transaction)
@@ -433,27 +438,27 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_transactions_and_block_reward_whenDuplicateTransaction_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 50,
-            'signature': 'signature',
-            'hash': "transaction_hash_one"
-        }
-        reward_transaction = {
-            'from': 0,
-            'timestamp': 1498933800,
-            'to': 'to',
-            'amount': 50,
-            'signature': 'signature',
-            'hash': 0
-        }
+
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 50
+        transaction.signature = "signature_one"
+        transaction.tx_hash = "transaction_hash_one"
+
+        reward_transaction = Mock(Transaction)
+        reward_transaction.source = "0"
+        reward_transaction.timestamp = 1498933800
+        reward_transaction.destination = "to"
+        reward_transaction.amount = 50
+        reward_transaction.signature = "signature"
+        reward_transaction.tx_hash = "0"
+
         mock_block.index = 2
         mock_block.transactions = [transaction, reward_transaction]
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_transaction_hash', return_value="transaction_hash_one") as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=True) as patched_find_duplicate_transactions, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
@@ -465,35 +470,35 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_transactions_and_block_reward_whenInsufficientBalanceFromPayer_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction_one = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_one',
-            'hash': "transaction_hash_one"
-        }
-        transaction_two = {
-            'from': 'from',
-            'timestamp': 1498924800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_two',
-            'hash': "transaction_hash_two"
-        }
-        reward_transaction = {
-            'from': 0,
-            'timestamp': 1498933800,
-            'to': 'to',
-            'amount': 50,
-            'signature': '0',
-            'hash': 0
-        }
+
+        transaction_one = Mock(Transaction)
+        transaction_one.source = "from"
+        transaction_one.timestamp = 1498923800
+        transaction_one.destination = "to"
+        transaction_one.amount = 25
+        transaction_one.signature = "signature_one"
+        transaction_one.tx_hash = "transaction_hash_one"
+
+        transaction_two = Mock(Transaction)
+        transaction_two.source = "from"
+        transaction_two.timestamp = 1498924800
+        transaction_two.destination = "to"
+        transaction_two.amount = 25
+        transaction_two.signature = "signature_two"
+        transaction_two.tx_hash = "transaction_hash_two"
+
+        reward_transaction = Mock(Transaction)
+        reward_transaction.source = "0"
+        reward_transaction.timestamp = 1498933800
+        reward_transaction.destination = "to"
+        reward_transaction.amount = 50
+        reward_transaction.signature = "0"
+        reward_transaction.tx_hash = "0"
+
         mock_block.index = 5
         mock_block.transactions = [transaction_one, transaction_two, reward_transaction]
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_transaction_hash', side_effect=["transaction_hash_one", "transaction_hash_two"]) as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
                 patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
                 patch.object(Blockchain, 'get_balance', return_value=49) as patched_get_balance, \
@@ -506,35 +511,34 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_transactions_and_block_reward_whenInvalidBlockReward_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction_one = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_one',
-            'hash': "transaction_hash_one"
-        }
-        transaction_two = {
-            'from': 'from',
-            'timestamp': 1498924800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_two',
-            'hash': "transaction_hash_two"
-        }
-        reward_transaction = {
-            'from': 0,
-            'timestamp': 1498933800,
-            'to': 'to',
-            'amount': 51,
-            'signature': '0',
-            'hash': 0
-        }
+
+        transaction_one = Mock(Transaction)
+        transaction_one.source = "from"
+        transaction_one.timestamp = 1498923800
+        transaction_one.destination = "to"
+        transaction_one.amount = 25
+        transaction_one.signature = "signature_one"
+        transaction_one.tx_hash = "transaction_hash_one"
+
+        transaction_two = Mock(Transaction)
+        transaction_two.source = "from"
+        transaction_two.timestamp = 1498924800
+        transaction_two.destination = "to"
+        transaction_two.amount = 25
+        transaction_two.signature = "signature_two"
+        transaction_two.tx_hash = "transaction_hash_two"
+
+        reward_transaction = Mock(Transaction)
+        reward_transaction.source = "0"
+        reward_transaction.timestamp = 1498933800
+        reward_transaction.destination = "to"
+        reward_transaction.amount = 51
+        reward_transaction.signature = "0"
+        reward_transaction.tx_hash = "0"
         mock_block.index = 5
         mock_block.transactions = [transaction_one, transaction_two, reward_transaction]
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_transaction_hash', side_effect=["transaction_hash_one", "transaction_hash_two"]) as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
                 patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
@@ -547,35 +551,34 @@ class TestBlockchain(unittest.TestCase):
 
     def test_check_transactions_and_block_reward_whenInvalidBlockRewardSource_thenReturnsFalse(self):
         mock_block = Mock(Block)
-        transaction_one = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_one',
-            'hash': "transaction_hash_one"
-        }
-        transaction_two = {
-            'from': 'from',
-            'timestamp': 1498924800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature_two',
-            'hash': "transaction_hash_two"
-        }
-        reward_transaction = {
-            'from': 'a different source',
-            'timestamp': 1498933800,
-            'to': 'to',
-            'amount': 50,
-            'signature': '0',
-            'hash': 0
-        }
+        transaction_one = Mock(Transaction)
+        transaction_one.source = "from"
+        transaction_one.timestamp = 1498923800
+        transaction_one.destination = "to"
+        transaction_one.amount = 25
+        transaction_one.signature = "signature_one"
+        transaction_one.tx_hash = "transaction_hash_one"
+
+        transaction_two = Mock(Transaction)
+        transaction_two.source = "from"
+        transaction_two.timestamp = 1498924800
+        transaction_two.destination = "to"
+        transaction_two.amount = 25
+        transaction_two.signature = "signature_two"
+        transaction_two.tx_hash = "transaction_hash_two"
+
+        reward_transaction = Mock(Transaction)
+        reward_transaction.source = "a different source"
+        reward_transaction.timestamp = 1498933800
+        reward_transaction.destination = "to"
+        reward_transaction.amount = 50
+        reward_transaction.signature = "0"
+        reward_transaction.tx_hash = "0"
+
         mock_block.index = 5
         mock_block.transactions = [transaction_one, transaction_two, reward_transaction]
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
-                patch.object(Blockchain, 'calculate_transaction_hash', side_effect=["transaction_hash_one", "transaction_hash_two"]) as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
                 patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \

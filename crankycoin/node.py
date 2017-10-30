@@ -377,9 +377,12 @@ class FullNode(NodeMixin):
         body = json.loads(request.content.read())
         remote_block = json.loads(body['block'])
         remote_host = body['host']
+        transactions = [
+            Transaction.from_json(transaction_json) for transaction_json in remote_block['transactions']
+        ]
         block = Block(
             remote_block['index'],
-            remote_block['transactions'],
+            transactions,
             remote_block['previous_hash'],
             remote_block['timestamp'],
             remote_block['nonce']
