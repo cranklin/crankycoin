@@ -1,6 +1,9 @@
 ecdsa==0.13
 grequests==0.3.0
 klein==17.2.0
+pycryptodomex==3.4.7
 pyelliptic==1.5.7
+PyYAML==3.12
 requests==2.14.2
 virtualenv==15.1.0
+coincurve==6.0.0

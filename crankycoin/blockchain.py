@@ -1,5 +1,6 @@
 import hashlib
 import logging
+from math import floor
 import pyelliptic
 import threading
 import time
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 class Blockchain(object):
 
     INITIAL_COINS_PER_BLOCK = 50
-    HALVING_FREQUENCY = 1000
-    MAX_TRANSACTIONS_PER_BLOCK = 10
+    HALVING_FREQUENCY = 210000
+    MAX_TRANSACTIONS_PER_BLOCK = 2000
 
     unconfirmed_transactions = []
     blocks = []
@@ -225,10 +226,10 @@ class Blockchain(object):
         return True
 
     def get_reward(self, index):
-        # 50 coins per block.  Halves every 1000 blocks
+        # 50 coins per block.  Halves every 210000 blocks
         reward = self.INITIAL_COINS_PER_BLOCK
         for i in range(1, ((index / self.HALVING_FREQUENCY) + 1)):
-            reward = reward / 2
+            reward = floor((reward / 2.0) * 100000000) / 100000000
         return reward
 
     def get_size(self):
