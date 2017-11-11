@@ -30,12 +30,12 @@ class TestBlockchain(unittest.TestCase):
     def test_get_genesis_block_whenCalled_thenCreatesAndReturnsBlockWithGenesisTransactions(self):
         genesis_transaction_one = Transaction(
             "0",
-            "0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596",
+            "03dd1e57d05d9cab1d8d9b727568ad951ac2d9ecd082bc36f69e021b8427812924",
             1000
         )
         genesis_transaction_two = Transaction(
             "0",
-            "0466f992cd361e24e4fa0eeca9a7ddbea1d257a2053dbe16aeb36ac155679a797bf89776903290d7c93e4b5ba49968fbf8ab8a49190f3d7cafe11cc6e925e489f6",
+            "03dd1e3defd36c8c0c7282ca1a324851efdb15f742cac0c5b258ef7b290ece9e5d",
             1000
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
@@ -353,7 +353,7 @@ class TestBlockchain(unittest.TestCase):
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Transaction, '_calculate_tx_hash', return_value="transaction_hash_one") as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
+                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
@@ -393,7 +393,7 @@ class TestBlockchain(unittest.TestCase):
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
+                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
@@ -500,7 +500,7 @@ class TestBlockchain(unittest.TestCase):
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
+                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_balance', return_value=49) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
@@ -540,7 +540,7 @@ class TestBlockchain(unittest.TestCase):
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
+                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
@@ -580,7 +580,7 @@ class TestBlockchain(unittest.TestCase):
 
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Blockchain, 'verify_signature', return_value=True) as patched_verify_signature, \
+                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
@@ -1442,6 +1442,7 @@ class TestBlockchain(unittest.TestCase):
             self.assertEqual(len(subject.unconfirmed_transactions), 1)
             self.assertTrue(transaction_one in subject.unconfirmed_transactions)
 
+    @unittest.skip("defunct method migrated to Transaction")
     def test_verify_signature_whenSignatureAndMessageAndPublicKeyMatch_thenReturnsTrue(self):
         signature = '304502202d009c9b97385189d23600ae480435ea5b68786dbdba184c80e0fb6e58d8c5520221009c25f5cdf659f33ce04f683e14f355b3db5524a289feb9efa4c6879342a81648'
         message = 'hello world'
@@ -1457,6 +1458,7 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertTrue(resp)
 
+    @unittest.skip("defunct method migrated to Transaction")
     def test_verify_signature_whenSignatureAndMessageAndPublicKeyMisMatch_thenReturnsFalse(self):
         signature = '304502202d009c9b97385189d23600ae480435ea5b68786dbdba184c80e0fb6e58d8c5520221009c25f5cdf659f33ce04f683e14f355b3db5524a289feb9efa4c6879342a81648'
         message = 'invalid message'

@@ -1,7 +1,6 @@
 import hashlib
 import logging
 from math import floor
-import pyelliptic
 import threading
 import time
 
@@ -35,12 +34,12 @@ class Blockchain(object):
     def get_genesis_block(self):
         genesis_transaction_one = Transaction(
             "0",
-            "0409eb9224f408ece7163f40a33274d99b6b3f60e41b447dd45fcc6371f57b88d9d3583c358b1ea8aea4422d17c57de1418554d3a1cd620ca4cb296357888ea596",
+            "03dd1e57d05d9cab1d8d9b727568ad951ac2d9ecd082bc36f69e021b8427812924",
             1000
         )
         genesis_transaction_two = Transaction(
             "0",
-            "0466f992cd361e24e4fa0eeca9a7ddbea1d257a2053dbe16aeb36ac155679a797bf89776903290d7c93e4b5ba49968fbf8ab8a49190f3d7cafe11cc6e925e489f6",
+            "03dd1e3defd36c8c0c7282ca1a324851efdb15f742cac0c5b258ef7b290ece9e5d",
             1000
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
@@ -267,12 +266,6 @@ class Blockchain(object):
         with self.unconfirmed_transactions_lock:
             self.unconfirmed_transactions.append(transaction)
             return True
-
-    def verify_signature(self, signature, message, public_key):
-        return pyelliptic.ECC(curve='secp256k1', pubkey=public_key.decode('hex')).verify(signature.decode('hex'), message)
-
-    def generate_signable_transaction(self, from_address, to_address, amount, timestamp):
-        return ":".join((from_address, to_address, amount, timestamp))
 
     def __str__(self):
         return str(self.__dict__)

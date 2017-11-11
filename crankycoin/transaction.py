@@ -1,6 +1,6 @@
+import coincurve
 import hashlib
 import json
-import pyelliptic
 import time
 
 from errors import *
@@ -73,10 +73,7 @@ class Transaction(object):
         return hash_object.hexdigest()
 
     def sign(self, private_key):
-        signature = pyelliptic\
-            .ECC(curve='secp256k1', privkey=private_key, pubkey=self._source.decode('hex'))\
-            .sign(self.to_signable())\
-            .encode('hex')
+        signature = coincurve.PrivateKey.from_hex(private_key).sign(self.to_signable()).encode('hex')
         self._signature = signature
         self._tx_hash = self._calculate_tx_hash()
         return signature
@@ -90,9 +87,7 @@ class Transaction(object):
         ))
 
     def verify(self):
-        return pyelliptic\
-            .ECC(curve='secp256k1', pubkey=self._source)\
-            .verify(self._signature.decode('hex'), self.to_signable())
+        return coincurve.PublicKey(self._source).verify(self._signature, self.to_signable())
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
