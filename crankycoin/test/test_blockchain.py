@@ -219,7 +219,8 @@ class TestBlockchain(unittest.TestCase):
         transaction.signature = "signature"
         transaction.tx_hash = "transaction_hash"
 
-        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'calculate_hash_difficulty', return_value=4) as patched_calculate_hash_difficulty:
             mock_block.current_hash = "0000_valid_block_hash"
             mock_block.index = 35
             mock_block.previous_hash = "0000_valid_previous_hash"
@@ -269,7 +270,8 @@ class TestBlockchain(unittest.TestCase):
         transaction.signature = "signature"
         transaction.tx_hash = "transaction_hash"
 
-        with patch.object(Blockchain, '__init__', return_value=None) as patched_init:
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'calculate_hash_difficulty', return_value=4) as patched_calculate_hash_difficulty:
             mock_block.current_hash = "invalid_block_hash"
             mock_block.index = 35
             mock_block.previous_hash = "0000_valid_previous_hash"
@@ -882,7 +884,7 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward, \
-                patch.object(Block, '_calculate_block_hash', side_effect=["bad_hash", "bad_hash", "0000_good_hash"]) as patched_calculate_block_hash:
+                patch.object(Block, '_calculate_block_hash', side_effect=["bad_hash", "bad_hash", "00000_good_hash"]) as patched_calculate_block_hash:
 
             subject = Blockchain()
 

@@ -17,6 +17,10 @@ class Blockchain(object):
     INITIAL_COINS_PER_BLOCK = 50
     HALVING_FREQUENCY = 210000
     MAX_TRANSACTIONS_PER_BLOCK = 2000
+    MINIMUM_HASH_DIFFICULTY = 5
+    TARGET_TIME_PER_BLOCK = 600
+    DIFFICULTY_ADJUSTMENT_SPAN = 100
+    SIGNIFICANT_DIGITS = 8
 
     unconfirmed_transactions = []
     blocks = []
@@ -43,7 +47,7 @@ class Blockchain(object):
             1000
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
-        genesis_block = Block(0, genesis_transactions, 0, 0, 0);
+        genesis_block = Block(0, genesis_transactions, 0, 0, 0)
         return genesis_block
 
     def _check_genesis_block(self, block):
@@ -52,7 +56,8 @@ class Blockchain(object):
         return
 
     def _check_hash_and_hash_pattern(self, block):
-        if block.current_hash[:4] != "0000":
+        hash_difficulty = self.calculate_hash_difficulty()
+        if block.current_hash[:hash_difficulty].count('0') != hash_difficulty:
             raise InvalidHash(block.index, "Incompatible Block Hash: {}".format(block.current_hash))
         return
 
@@ -171,7 +176,7 @@ class Blockchain(object):
 
         i = 0
         block = Block(new_block_id, transactions, previous_hash, timestamp, i)
-        while block.current_hash[:4] != "0000":
+        while block.hash_difficulty != self.calculate_hash_difficulty():
             latest_block = self.get_latest_block()
             if latest_block.index >= new_block_id or latest_block.current_hash != previous_hash:
                 # Next block in sequence was mined by another node.  Stop mining current block.
@@ -224,11 +229,32 @@ class Blockchain(object):
             raise
         return True
 
+    def calculate_hash_difficulty(self, index=None):
+        # TODO: calculate the delta:
+        if index is None:
+            block = self.get_latest_block()
+        else:
+            block = self.get_block_by_index(index)
+
+        if block.index > self.DIFFICULTY_ADJUSTMENT_SPAN:
+            block_delta = self.get_block_by_index(index - self.DIFFICULTY_ADJUSTMENT_SPAN)
+            timestamp_delta = block.timestamp - block_delta.timestamp
+            # blocks were mined quicker than target
+            if timestamp_delta < self.TARGET_TIME_PER_BLOCK - (self.TARGET_TIME_PER_BLOCK / 10):
+                return block.hash_difficulty + 1
+            # blocks were mined slower than target
+            elif timestamp_delta > self.TARGET_TIME_PER_BLOCK + (self.TARGET_TIME_PER_BLOCK / 10):
+                return block.hash_difficulty - 1
+            # blocks were mined within the target time window
+            return block.hash_difficulty
+        # not enough blocks were mined for an adjustment
+        return self.MINIMUM_HASH_DIFFICULTY
+
     def get_reward(self, index):
-        # 50 coins per block.  Halves every 210000 blocks
+        precision = pow(10, self.SIGNIFICANT_DIGITS)
         reward = self.INITIAL_COINS_PER_BLOCK
         for i in range(1, ((index / self.HALVING_FREQUENCY) + 1)):
-            reward = floor((reward / 2.0) * 100000000) / 100000000
+            reward = floor((reward / 2.0) * precision) / precision
         return reward
 
     def get_size(self):

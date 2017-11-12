@@ -50,6 +50,15 @@ class Block(object):
         return self._current_hash
 
     @property
+    def hash_difficulty(self):
+        difficulty = 0
+        for c in self.current_hash:
+            if c != '0':
+                break
+            difficulty += 1
+        return difficulty
+
+    @property
     def nonce(self):
         return self._nonce
 
