@@ -231,7 +231,6 @@ class Blockchain(object):
         return True
 
     def calculate_hash_difficulty(self, index=None):
-        # TODO: calculate the delta:
         if index is None:
             block = self.get_latest_block()
         else:

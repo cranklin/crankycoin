@@ -18,7 +18,6 @@ DEFAULT_NODES = config['network']['default_nodes']
 
 
 class NodeMixin(object):
-    # TODO: store the nodes in an external configuration file
     full_nodes = set(DEFAULT_NODES)
 
     def request_nodes(self, node, port):
