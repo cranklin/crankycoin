@@ -1,23 +1,25 @@
 import grequests
 import requests
+from klein import Klein
 
 from blockchain import *
-from klein import Klein
+from config import config
 from transaction import *
 
-FULL_NODE_PORT = "30013"
-NODES_URL = "http://{}:{}/nodes"
-TRANSACTIONS_URL = "http://{}:{}/transactions"
-BLOCK_URL = "http://{}:{}/block/{}"
-BLOCKS_RANGE_URL = "http://{}:{}/blocks/{}/{}"
-BLOCKS_URL = "http://{}:{}/blocks"
-TRANSACTION_HISTORY_URL = "http://{}:{}/address/{}/transactions"
-BALANCE_URL = "http://{}:{}/address/{}/balance"
+FULL_NODE_PORT = config['network']['full_node_port']
+NODES_URL = config['network']['nodes_url']
+TRANSACTIONS_URL = config['network']['transactions_url']
+BLOCK_URL = config['network']['block_url']
+BLOCKS_RANGE_URL = config['network']['blocks_range_url']
+BLOCKS_URL = config['network']['blocks_url']
+TRANSACTION_HISTORY_URL = config['network']['transaction_history_url']
+BALANCE_URL = config['network']['balance_url']
+DEFAULT_NODES = config['network']['default_nodes']
 
 
 class NodeMixin(object):
     # TODO: store the nodes in an external configuration file
-    full_nodes = {"127.0.0.1"}
+    full_nodes = set(DEFAULT_NODES)
 
     def request_nodes(self, node, port):
         url = NODES_URL.format(node, port)

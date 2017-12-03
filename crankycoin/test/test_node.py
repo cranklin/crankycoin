@@ -157,9 +157,9 @@ class TestNode(unittest.TestCase):
 
             self.assertEqual(blocks, [block, block, block])
             patched_request_block.assert_has_calls([
-                call("127.0.0.1", "30013", "latest"),
-                call("127.0.0.2", "30013", "latest"),
-                call("127.0.0.3", "30013", "latest")
+                call("127.0.0.1", 30013, "latest"),
+                call("127.0.0.2", 30013, "latest"),
+                call("127.0.0.3", 30013, "latest")
             ], True)
 
     def test_request_blocks_range(self):

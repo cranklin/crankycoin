@@ -1,10 +1,11 @@
 import hashlib
 import logging
-from math import floor
 import threading
 import time
+from math import floor
 
 from block import *
+from config import *
 from errors import *
 from transaction import *
 
@@ -14,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 class Blockchain(object):
 
-    INITIAL_COINS_PER_BLOCK = 50
-    HALVING_FREQUENCY = 210000
-    MAX_TRANSACTIONS_PER_BLOCK = 2000
-    MINIMUM_HASH_DIFFICULTY = 5
-    TARGET_TIME_PER_BLOCK = 600
-    DIFFICULTY_ADJUSTMENT_SPAN = 100
-    SIGNIFICANT_DIGITS = 8
+    INITIAL_COINS_PER_BLOCK = config['network']['initial_coins_per_block']
+    HALVING_FREQUENCY = config['network']['halving_frequency']
+    MAX_TRANSACTIONS_PER_BLOCK = config['network']['max_transactions_per_block']
+    MINIMUM_HASH_DIFFICULTY = config['network']['minimum_hash_difficulty']
+    TARGET_TIME_PER_BLOCK = config['network']['target_time_per_block']
+    DIFFICULTY_ADJUSTMENT_SPAN = config['network']['difficulty_adjustment_span']
+    SIGNIFICANT_DIGITS = config['network']['significant_digits']
 
     unconfirmed_transactions = []
     blocks = []
@@ -176,7 +177,7 @@ class Blockchain(object):
 
         i = 0
         block = Block(new_block_id, transactions, previous_hash, timestamp, i)
-        while block.hash_difficulty != self.calculate_hash_difficulty():
+        while block.hash_difficulty < self.calculate_hash_difficulty():
             latest_block = self.get_latest_block()
             if latest_block.index >= new_block_id or latest_block.current_hash != previous_hash:
                 # Next block in sequence was mined by another node.  Stop mining current block.

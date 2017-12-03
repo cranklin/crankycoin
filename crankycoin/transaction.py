@@ -3,6 +3,7 @@ import hashlib
 import json
 import time
 
+from config import config
 from errors import *
 
 
