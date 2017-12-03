@@ -1,10 +1,14 @@
 import grequests
+import logging
 import requests
 from klein import Klein
 
 from blockchain import *
 from config import config
 from transaction import *
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 FULL_NODE_PORT = config['network']['full_node_port']
 NODES_URL = config['network']['nodes_url']
@@ -90,7 +94,7 @@ class FullNode(NodeMixin):
         thread = threading.Thread(target=self.mine, args=())
         thread.daemon = True
         thread.start()
-        print "\n\nfull node server started...\n\n"
+        logger.info("full node server started on %s with reward address of %s...", host, reward_address)
         self.app.run(host, FULL_NODE_PORT)
 
     def request_block(self, node, port, index="latest"):
@@ -177,7 +181,7 @@ class FullNode(NodeMixin):
         return None
 
     def mine(self):
-        print "\n\nmining started...\n\n"
+        logger.info("miner node started on %s with reward address of %s...", self.host, self.reward_address)
         while True:
             latest_block = self.blockchain.get_latest_block()
             latest_hash = latest_block.current_hash

@@ -1,4 +1,5 @@
 import coincurve
+import logging
 import random
 import requests
 
@@ -6,6 +7,8 @@ from config import config
 from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
 from transaction import *
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Client(NodeMixin):
 
@@ -16,6 +19,7 @@ class Client(NodeMixin):
         if private_key is not None:
             self.__private_key__ = coincurve.PrivateKey.from_hex(private_key)
         else:
+            logger.info("No private key provided. Generating new key pair.")
             self.__private_key__ = coincurve.PrivateKey()
         self.__public_key__ = self.__private_key__.public_key
 

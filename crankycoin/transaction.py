@@ -1,11 +1,14 @@
 import coincurve
 import hashlib
+import logging
 import json
 import time
 
 from config import config
 from errors import *
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Transaction(object):
 
