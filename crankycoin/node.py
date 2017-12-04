@@ -4,11 +4,8 @@ import requests
 from klein import Klein
 
 from blockchain import *
-from config import config
 from transaction import *
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 FULL_NODE_PORT = config['network']['full_node_port']
 NODES_URL = config['network']['nodes_url']

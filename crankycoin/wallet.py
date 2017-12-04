@@ -3,12 +3,9 @@ import logging
 import random
 import requests
 
-from config import config
 from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
 from transaction import *
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class Client(NodeMixin):
 

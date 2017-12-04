@@ -9,9 +9,6 @@ from config import *
 from errors import *
 from transaction import *
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 class Blockchain(object):
 

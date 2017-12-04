@@ -21,8 +21,14 @@ def client():
         ciphertext = encrypted[32:]
         hashedpass = hashlib.sha256(passphrase).digest()
         cipher = AES.new(hashedpass, AES.MODE_EAX, nonce)
-        private_key = cipher.decrypt_and_verify(ciphertext, tag)
-        client = Client(private_key)
+        try:
+            private_key = cipher.decrypt_and_verify(ciphertext, tag)
+            client = Client(private_key)
+        except ValueError as ve:
+            logger.warn('Invalid passphrase')
+            print("\n\nInvalid passphrase\n\n")
+            exit()
+
     while True:
         cmd = raw_input("{} ({}) wallet > ".format(config['network']['name'], config['network']['ticker_symbol']))
         cmd_split = cmd.split()
@@ -33,7 +39,10 @@ def client():
                 else:
                     print client.get_balance()
             elif cmd_split[0] == "send":
-                pass
+                if len(cmd_split) == 3:
+                    print client.create_transaction(cmd_split[1], cmd_split[2])
+                else:
+                    print("\nRequires destination and amount\n")
             elif cmd_split[0] == "publickey":
                 print client.get_public_key()
             elif cmd_split[0] == "privatekey":
@@ -56,9 +65,45 @@ def full():
     public_key = config['user']['public_key']
     if ip is None or public_key is None:
         print("\n\npublic key and IP must be provided.\n\n")
+        exit()
     else:
         print "\n\nfull node server starting...\n\n"
         fullnode = FullNode(ip, public_key)
+
+    while True:
+        cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
+        cmd_split = cmd.split()
+        try:
+            if cmd_split[0] == "synchronize":
+                print fullnode.synchronize()
+            elif cmd_split[0] == "addnode":
+                if len(cmd_split) == 2:
+                    print fullnode.add_node(cmd_split[1])
+                else:
+                    print("\nRequires host of node to add\n")
+            elif cmd_split[0] == "getnodes":
+                print fullnode.full_nodes
+            elif cmd_split[0] == "loadblockchain":
+                if len(cmd_split) == 2:
+                    print fullnode.load_blockchain(cmd_split[1])
+                else:
+                    print("\nRequires path/to/blockchain\n")
+            elif cmd_split[0] == "getblock":
+                if len(cmd_split) == 2:
+                    print fullnode.blockchain.get_block_by_index(cmd_split[1])
+                else:
+                    print fullnode.blockchain.get_latest_block()
+            elif cmd_split[0] == "getblocks":
+                if len(cmd_split) == 3:
+                    print fullnode.blockchain.get_blocks_range(cmd_split[1], cmd_split[2])
+                else:
+                    print fullnode.blockchain.get_all_blocks()
+            elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
+                exit()
+            else:  # help
+                pass
+        except IndexError:
+            pass
 
 
 def miner():
