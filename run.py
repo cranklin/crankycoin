@@ -28,21 +28,28 @@ def client():
         cmd_split = cmd.split()
         try:
             if cmd_split[0] == "balance":
-                pass
+                if len(cmd_split) == 2:
+                    print client.get_balance(cmd_split[1])
+                else:
+                    print client.get_balance()
             elif cmd_split[0] == "send":
                 pass
             elif cmd_split[0] == "publickey":
-                pass
+                print client.get_public_key()
             elif cmd_split[0] == "privatekey":
-                pass
+                print client.get_private_key()
             elif cmd_split[0] == "history":
-                pass
+                if len(cmd_split) == 2:
+                    print client.get_transaction_history(cmd_split[1])
+                else:
+                    print client.get_transaction_history()
             elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
                 exit()
             else:  # help
                 pass
         except IndexError:
             pass
+
 
 def full():
     ip = config['user']['ip']
