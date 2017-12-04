@@ -1,5 +1,4 @@
 import hashlib
-import logging
 import threading
 import time
 from math import floor

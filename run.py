@@ -9,6 +9,16 @@ from crankycoin import *
 
 
 def client():
+    helptext = '''
+        Available commands:
+        ===================
+        balance <public key (optional)>
+        send <destination> <amount>
+        publickey
+        privatekey
+        history <public key (optional)>
+        quit or exit
+    '''
     encrypted = config['user']['encrypted_private_key']
     if encrypted is None:
         print("\n\nNo private key provided. A new wallet will be generated for you...\n\n")
@@ -55,12 +65,23 @@ def client():
             elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
                 exit()
             else:  # help
-                pass
+                print helptext
         except IndexError:
             pass
 
 
 def full():
+    helptext = '''
+        Available commands:
+        ===================
+        synchronize
+        addnode <host>
+        getnodes
+        loadblockchain <path/to/blockchain>
+        getblock <index (optional)>
+        getblocks <start index (optional)> <stop index (optional)>
+        quit or exit
+    '''
     ip = config['user']['ip']
     public_key = config['user']['public_key']
     if ip is None or public_key is None:
@@ -101,7 +122,7 @@ def full():
             elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
                 exit()
             else:  # help
-                pass
+                print helptext
         except IndexError:
             pass
 

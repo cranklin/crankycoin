@@ -1,9 +1,9 @@
 import coincurve
-import logging
 import random
 import requests
 
-from node import NodeMixin, BALANCE_URL, FULL_NODE_PORT, TRANSACTION_HISTORY_URL
+from config import *
+from node import NodeMixin
 from transaction import *
 
 
@@ -39,7 +39,7 @@ class Client(NodeMixin):
             address = self.get_public_key()
         if node is None:
             node = random.sample(self.full_nodes, 1)[0]
-        url = BALANCE_URL.format(node, FULL_NODE_PORT, address)
+        url = self.BALANCE_URL.format(node, self.FULL_NODE_PORT, address)
         try:
             response = requests.get(url)
             return response.json()
@@ -52,7 +52,7 @@ class Client(NodeMixin):
             address = self.get_public_key()
         if node is None:
             node = random.sample(self.full_nodes, 1)[0]
-        url = TRANSACTION_HISTORY_URL.format(node, FULL_NODE_PORT, address)
+        url = self.TRANSACTION_HISTORY_URL.format(node, self.FULL_NODE_PORT, address)
         try:
             response = requests.get(url)
             return response.json()

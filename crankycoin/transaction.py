@@ -1,6 +1,5 @@
 import coincurve
 import hashlib
-import logging
 import json
 import time
 

@@ -1,5 +1,4 @@
 import grequests
-import logging
 import requests
 from klein import Klein
 
@@ -7,22 +6,21 @@ from blockchain import *
 from transaction import *
 
 
-FULL_NODE_PORT = config['network']['full_node_port']
-NODES_URL = config['network']['nodes_url']
-TRANSACTIONS_URL = config['network']['transactions_url']
-BLOCK_URL = config['network']['block_url']
-BLOCKS_RANGE_URL = config['network']['blocks_range_url']
-BLOCKS_URL = config['network']['blocks_url']
-TRANSACTION_HISTORY_URL = config['network']['transaction_history_url']
-BALANCE_URL = config['network']['balance_url']
-DEFAULT_NODES = config['network']['default_nodes']
-
-
 class NodeMixin(object):
+
+    FULL_NODE_PORT = config['network']['full_node_port']
+    NODES_URL = config['network']['nodes_url']
+    TRANSACTIONS_URL = config['network']['transactions_url']
+    BLOCK_URL = config['network']['block_url']
+    BLOCKS_RANGE_URL = config['network']['blocks_range_url']
+    BLOCKS_URL = config['network']['blocks_url']
+    TRANSACTION_HISTORY_URL = config['network']['transaction_history_url']
+    BALANCE_URL = config['network']['balance_url']
+    DEFAULT_NODES = config['network']['default_nodes']
     full_nodes = set(DEFAULT_NODES)
 
     def request_nodes(self, node, port):
-        url = NODES_URL.format(node, port)
+        url = self.NODES_URL.format(node, port)
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -37,7 +35,7 @@ class NodeMixin(object):
         bad_nodes = set()
 
         for node in full_nodes:
-            all_nodes = self.request_nodes(node, FULL_NODE_PORT)
+            all_nodes = self.request_nodes(node, self.FULL_NODE_PORT)
             if all_nodes is not None:
                 full_nodes = full_nodes.union(all_nodes["full_nodes"])
             else:
@@ -60,7 +58,7 @@ class NodeMixin(object):
         }
 
         for node in self.full_nodes:
-            url = TRANSACTIONS_URL.format(node, FULL_NODE_PORT)
+            url = self.TRANSACTIONS_URL.format(node, self.FULL_NODE_PORT)
             try:
                 response = requests.post(url, json=data)
             except requests.exceptions.RequestException as re:
@@ -92,10 +90,10 @@ class FullNode(NodeMixin):
         thread.daemon = True
         thread.start()
         logger.info("full node server started on %s with reward address of %s...", host, reward_address)
-        self.app.run(host, FULL_NODE_PORT)
+        self.app.run(host, self.FULL_NODE_PORT)
 
     def request_block(self, node, port, index="latest"):
-        url = BLOCK_URL.format(node, port, index)
+        url = self.BLOCK_URL.format(node, port, index)
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -121,7 +119,7 @@ class FullNode(NodeMixin):
         bad_nodes = set()
 
         for node in full_nodes:
-            block = self.request_block(node, FULL_NODE_PORT, index)
+            block = self.request_block(node, self.FULL_NODE_PORT, index)
             if block is not None:
                 blocks.append(block)
             else:
@@ -132,7 +130,7 @@ class FullNode(NodeMixin):
         return blocks
 
     def request_blocks_range(self, node, port, start_index, stop_index):
-        url = BLOCKS_RANGE_URL.format(node, port, start_index, stop_index)
+        url = self.BLOCKS_RANGE_URL.format(node, port, start_index, stop_index)
         blocks = []
         try:
             response = requests.get(url)
@@ -155,7 +153,7 @@ class FullNode(NodeMixin):
         return None
 
     def request_blockchain(self, node, port):
-        url = BLOCKS_URL.format(node, port)
+        url = self.BLOCKS_URL.format(node, port)
         blocks = []
         try:
             response = requests.get(url)
@@ -217,7 +215,7 @@ class FullNode(NodeMixin):
         for node in self.full_nodes:
             if node == self.host:
                 continue
-            url = BLOCKS_URL.format(node, FULL_NODE_PORT)
+            url = self.BLOCKS_URL.format(node, self.FULL_NODE_PORT)
             try:
                 response = requests.post(url, json=data)
                 if response.status_code == 202:
@@ -254,7 +252,7 @@ class FullNode(NodeMixin):
         for node in self.full_nodes:
             if node == self.host:
                 continue
-            url = NODES_URL.format(node, FULL_NODE_PORT)
+            url = self.NODES_URL.format(node, self.FULL_NODE_PORT)
             try:
                 requests.post(url, json=data)
             except requests.exceptions.RequestException as re:
@@ -286,7 +284,7 @@ class FullNode(NodeMixin):
         self.request_nodes_from_all()
         bad_nodes = set()
         for node in self.full_nodes:
-            url = BLOCK_URL.format(node, FULL_NODE_PORT, "latest")
+            url = self.BLOCK_URL.format(node, self.FULL_NODE_PORT, "latest")
             try:
                 response = requests.get(url)
                 if response.status_code == 200:
@@ -314,7 +312,7 @@ class FullNode(NodeMixin):
 
                     remote_diff_blocks = self.request_blocks_range(
                         remote_host,
-                        FULL_NODE_PORT,
+                        self.FULL_NODE_PORT,
                         my_latest_block.index + 1,
                         index
                     )
@@ -329,7 +327,7 @@ class FullNode(NodeMixin):
                         # first block in diff blocks does not fit local chain
                         for i in range(my_latest_block.index, 1, -1):
                             # step backwards and look for the first remote block that fits the local chain
-                            block = self.request_block(remote_host, FULL_NODE_PORT, str(i))
+                            block = self.request_block(remote_host, self.FULL_NODE_PORT, str(i))
                             remote_diff_blocks[0:0] = [block]
                             if block.previous_hash == self.blockchain.get_block_by_index(i-1):
                                 # found the fork
@@ -398,7 +396,7 @@ class FullNode(NodeMixin):
             # new block index is greater than ours
             remote_diff_blocks = self.request_blocks_range(
                 remote_host,
-                FULL_NODE_PORT,
+                self.FULL_NODE_PORT,
                 my_latest_block.index + 1,
                 remote_block['index']
             )
@@ -416,7 +414,7 @@ class FullNode(NodeMixin):
                 # first block in diff blocks does not fit local chain
                 for i in range(my_latest_block.index, 1, -1):
                     # step backwards and look for the first remote block that fits the local chain
-                    block = self.request_block(remote_host, FULL_NODE_PORT, str(i))
+                    block = self.request_block(remote_host, self.FULL_NODE_PORT, str(i))
                     remote_diff_blocks[0:0] = [block]
                     if block.previous_hash == self.blockchain.get_block_by_index(i-1):
                         # found the fork
