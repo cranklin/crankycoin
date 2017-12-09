@@ -12,7 +12,7 @@ network:
     max_transactions_per_block: 2000
     minimum_hash_difficulty: 4
     target_time_per_block: 600
-    difficulty_adjustment_span: 100
+    difficulty_adjustment_span: 500
     significant_digits: 8
     full_node_port: 30013
     nodes_url: "http://{}:{}/nodes"
