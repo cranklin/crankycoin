@@ -1,7 +1,8 @@
 import hashlib
-import threading
 import time
 from math import floor
+from multiprocessing import Lock, Queue
+from Queue import Empty, Full
 
 from block import *
 from config import *
@@ -19,12 +20,11 @@ class Blockchain(object):
     DIFFICULTY_ADJUSTMENT_SPAN = config['network']['difficulty_adjustment_span']
     SIGNIFICANT_DIGITS = config['network']['significant_digits']
 
-    unconfirmed_transactions = []
     blocks = []
 
     def __init__(self, blocks=None):
-        self.unconfirmed_transactions_lock = threading.Lock()
-        self.blocks_lock = threading.Lock()
+        self.blocks_lock = Lock()
+        self.unconfirmed_transactions = Queue()
         if blocks is None:
             genesis_block = self.get_genesis_block()
             self.add_block(genesis_block)
@@ -115,19 +115,28 @@ class Blockchain(object):
         alternate_blocks = self.blocks[0:fork_start]
         alternate_blocks.extend(blocks)
         alternate_chain = Blockchain(alternate_blocks)
+
+        status = False
         if alternate_chain.get_size() > self.get_size():
-            with self.blocks_lock:
+            self.blocks_lock.acquire()
+            try:
                 self.blocks = alternate_blocks
-                return True
-        return False
+                status = True
+            finally:
+                self.blocks_lock.release()
+        return status
 
     def add_block(self, block):
         #TODO change this from memory to persistent
-        with self.blocks_lock:
-            if self.validate_block(block):
+        status = False
+        if self.validate_block(block):
+            self.blocks_lock.acquire()
+            try:
                 self.blocks.append(block)
-                return True
-        return False
+                status = True
+            finally:
+                self.blocks_lock.release()
+        return status
 
     def mine_block(self, reward_address):
         #TODO add transaction fees
@@ -279,15 +288,18 @@ class Blockchain(object):
 
     def pop_next_unconfirmed_transaction(self):
         try:
-            with self.unconfirmed_transactions_lock:
-                return self.unconfirmed_transactions.pop(0)
-        except IndexError:
-            return None
+            return self.unconfirmed_transactions.get(block=False)
+        except Empty as ee:
+            logger.info('Unconfirmed transactions queue is empty: {}'.format(ee.message))
+        return None
 
     def push_unconfirmed_transaction(self, transaction):
-        with self.unconfirmed_transactions_lock:
-            self.unconfirmed_transactions.append(transaction)
-            return True
+        try:
+            self.unconfirmed_transactions.put(transaction, block=False)
+        except Full as fe:
+            logger.error('Unconfirmed transactions queue is full: {}'.format(fe.message))
+            return False
+        return True
 
     def __str__(self):
         return str(self.__dict__)

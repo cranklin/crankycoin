@@ -50,7 +50,7 @@ def client():
                     print client.get_balance()
             elif cmd_split[0] == "send":
                 if len(cmd_split) == 3:
-                    print client.create_transaction(cmd_split[1], cmd_split[2])
+                    print client.create_transaction(cmd_split[1], float(cmd_split[2]))
                 else:
                     print("\nRequires destination and amount\n")
             elif cmd_split[0] == "publickey":
@@ -111,15 +111,16 @@ def full():
                     print("\nRequires path/to/blockchain\n")
             elif cmd_split[0] == "getblock":
                 if len(cmd_split) == 2:
-                    print fullnode.blockchain.get_block_by_index(cmd_split[1])
+                    print fullnode.blockchain.get_block_by_index(int(cmd_split[1]))
                 else:
                     print fullnode.blockchain.get_latest_block()
             elif cmd_split[0] == "getblocks":
                 if len(cmd_split) == 3:
-                    print fullnode.blockchain.get_blocks_range(cmd_split[1], cmd_split[2])
+                    print fullnode.blockchain.get_blocks_range(int(cmd_split[1]), int(cmd_split[2]))
                 else:
                     print fullnode.blockchain.get_all_blocks()
             elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
+                fullnode.shutdown(True)
                 exit()
             else:  # help
                 print helptext
@@ -134,8 +135,62 @@ def miner():
         print("\n\npublic key and IP must be provided.\n\n")
     else:
         print "\n\nfull node server started...\n\n"
+        fullnode = FullNode(ip, public_key, mining=True)
+    helptext = '''
+        Available commands:
+        ===================
+        synchronize
+        addnode <host>
+        getnodes
+        loadblockchain <path/to/blockchain>
+        getblock <index (optional)>
+        getblocks <start index (optional)> <stop index (optional)>
+        quit or exit
+    '''
+    ip = config['user']['ip']
+    public_key = config['user']['public_key']
+    if ip is None or public_key is None:
+        print("\n\npublic key and IP must be provided.\n\n")
+        exit()
+    else:
+        print "\n\nfull node server starting...\n\n"
         fullnode = FullNode(ip, public_key)
 
+    while True:
+        cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
+        cmd_split = cmd.split()
+        try:
+            if cmd_split[0] == "synchronize":
+                print fullnode.synchronize()
+            elif cmd_split[0] == "addnode":
+                if len(cmd_split) == 2:
+                    print fullnode.add_node(cmd_split[1])
+                else:
+                    print("\nRequires host of node to add\n")
+            elif cmd_split[0] == "getnodes":
+                print fullnode.full_nodes
+            elif cmd_split[0] == "loadblockchain":
+                if len(cmd_split) == 2:
+                    print fullnode.load_blockchain(cmd_split[1])
+                else:
+                    print("\nRequires path/to/blockchain\n")
+            elif cmd_split[0] == "getblock":
+                if len(cmd_split) == 2:
+                    print fullnode.blockchain.get_block_by_index(int(cmd_split[1]))
+                else:
+                    print fullnode.blockchain.get_latest_block()
+            elif cmd_split[0] == "getblocks":
+                if len(cmd_split) == 3:
+                    print fullnode.blockchain.get_blocks_range(int(cmd_split[1]), int(cmd_split[2]))
+                else:
+                    print fullnode.blockchain.get_all_blocks()
+            elif cmd_split[0] == "quit" or cmd_split[0] == "exit":
+                fullnode.shutdown(True)
+                exit()
+            else:  # help
+                print helptext
+        except IndexError:
+            pass
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Starts a ' + config['network']['name'] + ' node')

@@ -1,6 +1,7 @@
 import grequests
 import requests
 from klein import Klein
+from multiprocessing import Process
 
 from blockchain import *
 from transaction import *
@@ -75,22 +76,42 @@ class FullNode(NodeMixin):
     blockchain = None
     app = Klein()
 
-    def __init__(self, host, reward_address, block_path=None):
+    def __init__(self, host, reward_address, **kwargs):
         self.host = host
         self.request_nodes_from_all()
         self.reward_address = reward_address
         self.broadcast_node(host)
         self.full_nodes.add(host)
+
+        block_path = kwargs.get("block_path")
         if block_path is None:
             self.blockchain = Blockchain()
         else:
             self.load_blockchain(block_path)
 
-        thread = threading.Thread(target=self.mine, args=())
-        thread.daemon = True
-        thread.start()
+        mining = kwargs.get("mining")
+        if mining is True:
+            self.NODE_TYPE = "miner"
+            self.mining_process = Process(target=self.mine)
+            self.mining_process.start()
         logger.info("full node server started on %s with reward address of %s...", host, reward_address)
-        self.app.run(host, self.FULL_NODE_PORT)
+        self.node_process = Process(target=self.app.run, args=(host, self.FULL_NODE_PORT))
+        self.node_process.start()
+        return None
+
+    def shutdown(self, force=False):
+        self.blockchain.unconfirmed_transactions.close()
+        if force is True:
+            self.blockchain.unconfirmed_transactions.cancel_join_thread()
+            if self.NODE_TYPE == "miner":
+                self.mining_process.terminate()
+            self.node_process.terminate()
+        else:
+            self.blockchain.unconfirmed_transactions.join_thread()
+            if self.NODE_TYPE == "miner":
+                self.mining_process.join(1)
+            self.node_process.join(1)
+        return None
 
     def request_block(self, node, port, index="latest"):
         url = self.BLOCK_URL.format(node, port, index)
@@ -187,12 +208,12 @@ class FullNode(NodeMixin):
                 continue
             statuses = self.broadcast_block(block)
             if statuses['expirations'] > statuses['confirmations'] or \
-                    statuses['invalidations'] > statuses['confirmations']:
+                            statuses['invalidations'] > statuses['confirmations']:
                 self.synchronize()
                 new_latest_block = self.blockchain.get_latest_block()
                 if latest_hash != new_latest_block.current_hash or \
-                        latest_index != new_latest_block.index:
-                    #latest_block changed after sync.. don't add the block.
+                                latest_index != new_latest_block.index:
+                    # latest_block changed after sync.. don't add the block.
                     self.blockchain.recycle_transactions(block)
                     continue
             self.blockchain.add_block(block)
@@ -379,7 +400,7 @@ class FullNode(NodeMixin):
         remote_host = body['host']
         transactions = [
             Transaction.from_json(transaction_json) for transaction_json in remote_block['transactions']
-        ]
+            ]
         block = Block(
             remote_block['index'],
             transactions,
