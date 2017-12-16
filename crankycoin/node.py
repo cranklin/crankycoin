@@ -94,10 +94,11 @@ class FullNode(NodeMixin):
             self.NODE_TYPE = "miner"
             self.mining_process = Process(target=self.mine)
             self.mining_process.start()
-        logger.info("full node server started on %s with reward address of %s...", host, reward_address)
+            logger.debug("mining node started on %s with reward address of %s...", host, reward_address)
+        logger.debug("full node server starting on %s with reward address of %s...", host, reward_address)
         self.node_process = Process(target=self.app.run, args=(host, self.FULL_NODE_PORT))
         self.node_process.start()
-        return None
+        logger.debug("full node server started on %s with reward address of %s...", host, reward_address)
 
     def shutdown(self, force=False):
         self.blockchain.unconfirmed_transactions.close()
@@ -111,7 +112,6 @@ class FullNode(NodeMixin):
             if self.NODE_TYPE == "miner":
                 self.mining_process.join(1)
             self.node_process.join(1)
-        return None
 
     def request_block(self, node, port, index="latest"):
         url = self.BLOCK_URL.format(node, port, index)
@@ -197,7 +197,7 @@ class FullNode(NodeMixin):
         return None
 
     def mine(self):
-        logger.info("miner node started on %s with reward address of %s...", self.host, self.reward_address)
+        logger.debug("mining node starting on %s with reward address of %s...", self.host, self.reward_address)
         while True:
             latest_block = self.blockchain.get_latest_block()
             latest_hash = latest_block.current_hash
@@ -208,11 +208,11 @@ class FullNode(NodeMixin):
                 continue
             statuses = self.broadcast_block(block)
             if statuses['expirations'] > statuses['confirmations'] or \
-                            statuses['invalidations'] > statuses['confirmations']:
+                    statuses['invalidations'] > statuses['confirmations']:
                 self.synchronize()
                 new_latest_block = self.blockchain.get_latest_block()
                 if latest_hash != new_latest_block.current_hash or \
-                                latest_index != new_latest_block.index:
+                        latest_index != new_latest_block.index:
                     # latest_block changed after sync.. don't add the block.
                     self.blockchain.recycle_transactions(block)
                     continue

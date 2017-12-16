@@ -88,7 +88,7 @@ def full():
         print("\n\npublic key and IP must be provided.\n\n")
         exit()
     else:
-        print "\n\nfull node server starting...\n\n"
+        print "\n\nfull node starting...\n\n"
         fullnode = FullNode(ip, public_key)
 
     while True:
@@ -129,13 +129,6 @@ def full():
 
 
 def miner():
-    ip = config['user']['ip']
-    public_key = config['user']['public_key']
-    if ip is None or public_key is None:
-        print("\n\npublic key and IP must be provided.\n\n")
-    else:
-        print "\n\nfull node server started...\n\n"
-        fullnode = FullNode(ip, public_key, mining=True)
     helptext = '''
         Available commands:
         ===================
@@ -153,8 +146,8 @@ def miner():
         print("\n\npublic key and IP must be provided.\n\n")
         exit()
     else:
-        print "\n\nfull node server starting...\n\n"
-        fullnode = FullNode(ip, public_key)
+        print "\n\nmining node starting...\n\n"
+        fullnode = FullNode(ip, public_key, mining=True)
 
     while True:
         cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
@@ -191,6 +184,7 @@ def miner():
                 print helptext
         except IndexError:
             pass
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Starts a ' + config['network']['name'] + ' node')

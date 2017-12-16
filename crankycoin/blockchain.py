@@ -290,14 +290,14 @@ class Blockchain(object):
         try:
             return self.unconfirmed_transactions.get(block=False)
         except Empty as ee:
-            logger.info('Unconfirmed transactions queue is empty: {}'.format(ee.message))
+            logger.debug('Unconfirmed transactions queue is empty: {}'.format(ee.message))
         return None
 
     def push_unconfirmed_transaction(self, transaction):
         try:
             self.unconfirmed_transactions.put(transaction, block=False)
         except Full as fe:
-            logger.error('Unconfirmed transactions queue is full: {}'.format(fe.message))
+            logger.debug('Unconfirmed transactions queue is full: {}'.format(fe.message))
             return False
         return True
 
