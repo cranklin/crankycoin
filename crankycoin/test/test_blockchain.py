@@ -340,6 +340,7 @@ class TestBlockchain(unittest.TestCase):
         transaction.timestamp = 1498923800
         transaction.destination = "to"
         transaction.amount = 50
+        transaction.fee = .1
         transaction.signature = "signature"
         transaction.tx_hash = "transaction_hash_one"
 
@@ -347,7 +348,8 @@ class TestBlockchain(unittest.TestCase):
         reward_transaction.source = "0"
         reward_transaction.timestamp = 1498933800
         reward_transaction.destination = "to"
-        reward_transaction.amount = 50
+        reward_transaction.amount = 50.1
+        reward_transaction.fee = 0
         reward_transaction.signature = "signature"
         reward_transaction.tx_hash = "0"
 
@@ -358,7 +360,7 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Transaction, '_calculate_tx_hash', return_value="transaction_hash_one") as patched_calculate_transaction_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
                 patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
-                patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
+                patch.object(Blockchain, 'get_balance', return_value=50.1) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
@@ -373,6 +375,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_one.timestamp = 1498923800
         transaction_one.destination = "to"
         transaction_one.amount = 25
+        transaction_one.fee = .1
         transaction_one.signature = "signature_one"
         transaction_one.tx_hash = "transaction_hash_one"
 
@@ -381,6 +384,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_two.timestamp = 1498924800
         transaction_two.destination = "to"
         transaction_two.amount = 25
+        transaction_two.fee = .1
         transaction_two.signature = "signature_two"
         transaction_two.tx_hash = "transaction_hash_two"
 
@@ -388,7 +392,8 @@ class TestBlockchain(unittest.TestCase):
         reward_transaction.source = "0"
         reward_transaction.timestamp = 1498933800
         reward_transaction.destination = "to"
-        reward_transaction.amount = 50
+        reward_transaction.amount = 50.2
+        reward_transaction.fee = 0
         reward_transaction.signature = "0"
         reward_transaction.tx_hash = "0"
 
@@ -398,7 +403,7 @@ class TestBlockchain(unittest.TestCase):
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
                 patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
-                patch.object(Blockchain, 'get_balance', return_value=50) as patched_get_balance, \
+                patch.object(Blockchain, 'get_balance', return_value=50.2) as patched_get_balance, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward:
             subject = Blockchain()
 
@@ -480,6 +485,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_one.timestamp = 1498923800
         transaction_one.destination = "to"
         transaction_one.amount = 25
+        transaction_one.fee = .1
         transaction_one.signature = "signature_one"
         transaction_one.tx_hash = "transaction_hash_one"
 
@@ -488,6 +494,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_two.timestamp = 1498924800
         transaction_two.destination = "to"
         transaction_two.amount = 25
+        transaction_two.fee = .1
         transaction_two.signature = "signature_two"
         transaction_two.tx_hash = "transaction_hash_two"
 
@@ -495,7 +502,8 @@ class TestBlockchain(unittest.TestCase):
         reward_transaction.source = "0"
         reward_transaction.timestamp = 1498933800
         reward_transaction.destination = "to"
-        reward_transaction.amount = 50
+        reward_transaction.amount = 50.2
+        reward_transaction.fee = 0
         reward_transaction.signature = "0"
         reward_transaction.tx_hash = "0"
 
@@ -521,6 +529,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_one.timestamp = 1498923800
         transaction_one.destination = "to"
         transaction_one.amount = 25
+        transaction_one.fee = .1
         transaction_one.signature = "signature_one"
         transaction_one.tx_hash = "transaction_hash_one"
 
@@ -529,6 +538,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_two.timestamp = 1498924800
         transaction_two.destination = "to"
         transaction_two.amount = 25
+        transaction_two.fee = .1
         transaction_two.signature = "signature_two"
         transaction_two.tx_hash = "transaction_hash_two"
 
@@ -537,6 +547,7 @@ class TestBlockchain(unittest.TestCase):
         reward_transaction.timestamp = 1498933800
         reward_transaction.destination = "to"
         reward_transaction.amount = 51
+        reward_transaction.fee = 0
         reward_transaction.signature = "0"
         reward_transaction.tx_hash = "0"
         mock_block.index = 5
@@ -560,6 +571,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_one.timestamp = 1498923800
         transaction_one.destination = "to"
         transaction_one.amount = 25
+        transaction_one.fee = .1
         transaction_one.signature = "signature_one"
         transaction_one.tx_hash = "transaction_hash_one"
 
@@ -568,6 +580,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_two.timestamp = 1498924800
         transaction_two.destination = "to"
         transaction_two.amount = 25
+        transaction_two.fee = .1
         transaction_two.signature = "signature_two"
         transaction_two.tx_hash = "transaction_hash_two"
 
@@ -576,6 +589,7 @@ class TestBlockchain(unittest.TestCase):
         reward_transaction.timestamp = 1498933800
         reward_transaction.destination = "to"
         reward_transaction.amount = 50
+        reward_transaction.fee = 0
         reward_transaction.signature = "0"
         reward_transaction.tx_hash = "0"
 
@@ -805,21 +819,22 @@ class TestBlockchain(unittest.TestCase):
             self.assertIsNone(resp)
             patched_pop_next_unconfirmed_transaction.assert_called_once()
 
+    @unittest.skip("Deprecated test.  Transaction validation now occurs up front")
     def test_mine_block_whenOneTransaction_andIncorrectTransactionHash_thenReturnsNone(self):
-        transaction = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature',
-            'hash': 'incorrect_transaction_hash'
-        }
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 25
+        transaction.fee = 0.1
+        transaction.signature = "signature"
+        transaction.tx_hash = "incorrect_transaction_hash"
+
         latest_block = Mock(Block)
         latest_block.index = 35
         latest_block.current_hash = "latest_block_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
- \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction:
             subject = Blockchain()
 
@@ -829,14 +844,14 @@ class TestBlockchain(unittest.TestCase):
             self.assertEqual(patched_pop_next_unconfirmed_transaction.call_count, 2)
 
     def test_mine_block_whenOneDuplicateTransaction_thenReturnsNone(self):
-        transaction = {
-            'from': 'from',
-            'timestamp': 1498923800,
-            'to': 'to',
-            'amount': 25,
-            'signature': 'signature',
-            'hash': 'transaction_hash'
-        }
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "to"
+        transaction.amount = 25
+        transaction.fee = 0.1
+        transaction.signature = "signature"
+        transaction.tx_hash = "transaction_hash"
 
         block_id_with_same_transaction = 38
         latest_block = Mock(Block)
@@ -844,9 +859,7 @@ class TestBlockchain(unittest.TestCase):
         latest_block.current_hash = "latest_block_hash"
         with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
- \
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, None]) as patched_pop_next_unconfirmed_transaction, \
-                patch.object(Transaction, '_calculate_tx_hash', return_value="transaction_hash") as patched_calculate_tx_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=block_id_with_same_transaction) as patched_find_duplicate_transactions:
             subject = Blockchain()
 
@@ -854,27 +867,28 @@ class TestBlockchain(unittest.TestCase):
 
             self.assertIsNone(resp)
             self.assertEqual(patched_pop_next_unconfirmed_transaction.call_count, 2)
-            self.assertEqual(patched_calculate_tx_hash.call_count, 1)
             patched_find_duplicate_transactions.asssert_called_once_with("transaction_hash")
 
     def test_mine_block_whenDuplicateTransactionsInUnconfirmedPool_thenMinesOneOfThemAndReturnsBlock(self):
         # this is difficult to test; likely code smell
-        transaction = {
-            'source': 'from',
-            'timestamp': 1498923800,
-            'destination': 'to',
-            'amount': 25,
-            'signature': 'signature',
-            'tx_hash': 'transaction_hash'
-        }
-        duplicate_transaction = {
-            'source': 'from',
-            'timestamp': 1498923800,
-            'destination': 'to',
-            'amount': 25,
-            'signature': 'signature',
-            'tx_hash': 'transaction_hash'
-        }
+        transaction = Mock(Transaction)
+        transaction.source = "from"
+        transaction.timestamp = 1498923800
+        transaction.destination = "address"
+        transaction.amount = 1
+        transaction.fee = 0.1
+        transaction.signature = "signature_one"
+        transaction.tx_hash = "transaction_hash"
+
+        duplicate_transaction = Mock(Transaction)
+        duplicate_transaction.source = "from"
+        duplicate_transaction.timestamp = 1498923800
+        duplicate_transaction.destination = "address"
+        duplicate_transaction.amount = 1
+        duplicate_transaction.fee = 0.1
+        duplicate_transaction.signature = "signature_one"
+        duplicate_transaction.tx_hash = "transaction_hash"
+
         latest_block = Mock(Block)
         latest_block.index = 31
         latest_block.current_hash = "latest_block_current_hash"
@@ -883,7 +897,6 @@ class TestBlockchain(unittest.TestCase):
                 patch.object(Blockchain, 'pop_next_unconfirmed_transaction', side_effect=[transaction, duplicate_transaction, None]) as patched_pop_next_unconfirmed_transaction, \
                 patch.object(Transaction, '_calculate_tx_hash', side_effect=["transaction_hash", "transaction_hash", "reward_transaction_hash"]) as patched_calculate_tx_hash, \
                 patch.object(Blockchain, 'find_duplicate_transactions', return_value=False) as patched_find_duplicate_transactions, \
-                patch.object(Transaction, 'verify', return_value=True) as patched_verify, \
                 patch.object(Blockchain, 'get_latest_block', return_value=latest_block) as patched_get_latest_block, \
                 patch.object(Blockchain, 'get_reward', return_value=50) as patched_get_reward, \
                 patch.object(Block, '_calculate_block_hash', side_effect=["bad_hash", "bad_hash", "00000_good_hash"]) as patched_calculate_block_hash:
@@ -895,9 +908,8 @@ class TestBlockchain(unittest.TestCase):
             self.assertIsInstance(resp, Block)
             self.assertEqual(len(resp.transactions), 2)
             self.assertEqual(patched_pop_next_unconfirmed_transaction.call_count, 3)
-            self.assertEqual(patched_calculate_tx_hash.call_count, 3)
+            self.assertEqual(patched_calculate_tx_hash.call_count, 1)
             patched_find_duplicate_transactions.assert_called_once_with("transaction_hash")
-            patched_verify.assert_called_once()
             self.assertEqual(patched_calculate_block_hash.call_count, 3)
 
     def test_get_transaction_history_whenAddressHasTransactions_returnHistory(self):
@@ -1036,6 +1048,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_one.timestamp = 1498923800
         transaction_one.destination = "address"
         transaction_one.amount = 1
+        transaction_one.fee = .1
         transaction_one.signature = "signature_one"
         transaction_one.tx_hash = "transaction_hash_one"
 
@@ -1044,6 +1057,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_two.timestamp = 1498924800
         transaction_two.destination = "address"
         transaction_two.amount = 3
+        transaction_two.fee = .1
         transaction_two.signature = "signature_two"
         transaction_two.tx_hash = "transaction_hash_two"
 
@@ -1052,6 +1066,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_three.timestamp = 1498925800
         transaction_three.destination = "to"
         transaction_three.amount = 5
+        transaction_three.fee = .1
         transaction_three.signature = "signature_three"
         transaction_three.tx_hash = "transaction_hash_three"
 
@@ -1060,6 +1075,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_four.timestamp = 1498926800
         transaction_four.destination = "address"
         transaction_four.amount = 7
+        transaction_four.fee = .1
         transaction_four.signature = "signature_four"
         transaction_four.tx_hash = "transaction_hash_four"
 
@@ -1068,6 +1084,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_five.timestamp = 1498927800
         transaction_five.destination = "to"
         transaction_five.amount = .11
+        transaction_five.fee = 0
         transaction_five.signature = "signature_five"
         transaction_five.tx_hash = "transaction_hash_five"
 
@@ -1076,6 +1093,7 @@ class TestBlockchain(unittest.TestCase):
         transaction_six.timestamp = 1498928800
         transaction_six.destination = "to"
         transaction_six.amount = .13
+        transaction_six.fee = .3
         transaction_six.signature = "signature_six"
         transaction_six.tx_hash = "transaction_hash_six"
 
@@ -1092,7 +1110,7 @@ class TestBlockchain(unittest.TestCase):
 
             balance = subject.get_balance('address')
 
-            self.assertEqual(balance, 10.76)
+            self.assertEqual(balance, 10.46)
 
     def test_get_balance_whenAddressHasNoTransactions_returnZeroBalance(self):
         transaction_one = Mock(Transaction)

@@ -362,6 +362,10 @@ class FullNode(NodeMixin):
                     break
         return
 
+    def __remove_unconfirmed_transactions(self, transactions):
+        for transaction in transactions:
+            self.blockchain.remove_unconfirmed_transaction(transaction.tx_hash)
+
     @app.route('/nodes', methods=['POST'])
     def post_node(self, request):
         body = json.loads(request.content.read())
@@ -383,6 +387,10 @@ class FullNode(NodeMixin):
     def post_transactions(self, request):
         body = json.loads(request.content.read())
         transaction = Transaction.from_json(body['transaction'])
+        if transaction.tx_hash != body['transaction']['tx_hash']:
+            logger.warn("Invalid transaction hash: {} should be {}".format(body['transaction']['tx_hash'], transaction.tx_hash))
+            request.setResponseCode(406)
+            return json.dumps({'message': 'Invalid transaction hash'})
         return json.dumps({'success': self.blockchain.push_unconfirmed_transaction(transaction)})
 
     @app.route('/transactions', methods=['GET'])
@@ -433,6 +441,7 @@ class FullNode(NodeMixin):
                     if not result:
                         request.setResponseCode(406)  # not acceptable
                         return json.dumps({'message': 'block {} rejected'.format(block.index)})
+                self.__remove_unconfirmed_transactions(transactions)
                 request.setResponseCode(202)  # accepted
                 return json.dumps({'message': 'accepted'})
             else:
@@ -447,6 +456,7 @@ class FullNode(NodeMixin):
                         if not result:
                             request.setResponseCode(406)  # not acceptable
                             return json.dumps({'message': 'blocks rejected'})
+                        self.__remove_unconfirmed_transactions(transactions)
                         request.setResponseCode(202)  # accepted
                         return json.dumps({'message': 'accepted'})
                 request.setResponseCode(406)  # not acceptable
@@ -462,6 +472,7 @@ class FullNode(NodeMixin):
         if not result:
             request.setResponseCode(406)  # not acceptable
             return json.dumps({'message': 'block {} rejected'.format(block.index)})
+        self.__remove_unconfirmed_transactions(transactions)
         request.setResponseCode(202)  # accepted
         return json.dumps({'message': 'accepted'})
 

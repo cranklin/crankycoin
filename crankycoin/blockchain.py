@@ -1,7 +1,7 @@
 import hashlib
 import time
 from math import floor
-from multiprocessing import Lock, Queue
+from multiprocessing import Lock, Manager
 from Queue import Empty, Full
 
 from block import *
@@ -24,7 +24,8 @@ class Blockchain(object):
 
     def __init__(self, blocks=None):
         self.blocks_lock = Lock()
-        self.unconfirmed_transactions = Queue()
+        self.unconfirmed_transactions_lock = Lock()
+        self.unconfirmed_transactions = Manager().list
         if blocks is None:
             genesis_block = self.get_genesis_block()
             self.add_block(genesis_block)
@@ -71,6 +72,7 @@ class Blockchain(object):
     def _check_transactions_and_block_reward(self, block):
         # transactions : list of transactions
         # transaction : dict(from, to, amount, timestamp, signature, hash)
+        reward_amount = self.get_reward(block.index)
         payers = dict()
         for transaction in block.transactions[:-1]:
             if self.find_duplicate_transactions(transaction.tx_hash):
@@ -78,16 +80,16 @@ class Blockchain(object):
             if not transaction.verify():
                 raise InvalidTransactions(block.index, "Transactions not valid.  Invalid Transaction signature")
             if transaction.source in payers:
-                payers[transaction.source] += transaction.amount
+                payers[transaction.source] += transaction.amount + transaction.fee
             else:
-                payers[transaction.source] = transaction.amount
+                payers[transaction.source] = transaction.amount + transaction.fee
+            reward_amount += transaction.fee
         for key in payers:
             balance = self.get_balance(key)
             if payers[key] > balance:
                 raise InvalidTransactions(block.index, "Transactions not valid.  Insufficient funds")
         # last transaction is block reward
         reward_transaction = block.transactions[-1]
-        reward_amount = self.get_reward(block.index)
         if reward_transaction.amount != reward_amount or reward_transaction.source != "0":
             raise InvalidTransactions(block.index, "Transactions not valid.  Incorrect block reward")
         return
@@ -108,6 +110,22 @@ class Blockchain(object):
             self._check_transactions_and_block_reward(block)
         except BlockchainException as bce:
             logger.warning("Validation Error (block id: %s): %s", bce.index, bce.message)
+            return False
+        return True
+
+    def validate_transaction(self, transaction):
+        if transaction in self.unconfirmed_transactions:
+            logger.warn('Transaction not valid.  Duplicate transaction detected: {}'.format(transaction.tx_hash))
+            return False
+        if self.find_duplicate_transactions(transaction.tx_hash):
+            logger.warn('Transaction not valid.  Replay transaction detected: {}'.format(transaction.tx_hash))
+            return False
+        if not transaction.verify():
+            logger.warn('Transaction not valid.  Invalid transaction signature: {}'.format(transaction.tx_hash))
+            return False
+        balance = self.get_balance(transaction.source)
+        if transaction.amount + transaction.fee > balance:
+            logger.warn('Transaction not valid.  Insufficient funds: {}'.format(transaction.tx_hash))
             return False
         return True
 
@@ -146,28 +164,20 @@ class Blockchain(object):
         latest_block = self.get_latest_block()
         new_block_id = latest_block.index + 1
         previous_hash = latest_block.current_hash
+        fees = 0
 
         for i in range(0, self.MAX_TRANSACTIONS_PER_BLOCK):
-            unconfirmed_transaction_json = self.pop_next_unconfirmed_transaction()
-            if unconfirmed_transaction_json is None:
+            unconfirmed_transaction = self.pop_next_unconfirmed_transaction()
+            if unconfirmed_transaction is None:
                 break
-            unconfirmed_transaction = Transaction(
-                unconfirmed_transaction_json.get('source'),
-                unconfirmed_transaction_json.get('destination'),
-                unconfirmed_transaction_json.get('amount'),
-                unconfirmed_transaction_json.get('fee'),
-                unconfirmed_transaction_json.get('signature')
-            )
-            if unconfirmed_transaction.tx_hash != unconfirmed_transaction_json.get('tx_hash'):
-                continue
             if unconfirmed_transaction.tx_hash in [transaction.tx_hash for transaction in transactions]:
                 continue
             if self.find_duplicate_transactions(unconfirmed_transaction.tx_hash):
                 continue
             if not unconfirmed_transaction.verify():
                 continue
-
             transactions.append(unconfirmed_transaction)
+            fees += unconfirmed_transaction.fee
 
         if len(transactions) < 1:
             return None
@@ -175,7 +185,7 @@ class Blockchain(object):
         reward_transaction = Transaction(
             "0",
             reward_address,
-            self.get_reward(new_block_id),
+            self.get_reward(new_block_id) + fees,
             0,
             "0"
         )
@@ -213,7 +223,7 @@ class Blockchain(object):
         for block in self.blocks:
             for transaction in block.transactions:
                 if transaction.source == address:
-                    balance -= transaction.amount
+                    balance -= transaction.amount + transaction.fee
                 if transaction.destination == address:
                     balance += transaction.amount
         return balance
@@ -291,19 +301,49 @@ class Blockchain(object):
         return self.unconfirmed_transactions
 
     def pop_next_unconfirmed_transaction(self):
-        try:
-            return self.unconfirmed_transactions.get(block=False)
-        except Empty as ee:
-            logger.debug('Unconfirmed transactions queue is empty: {}'.format(ee.message))
-        return None
+        '''
+        Should only be called by mining nodes.  Full nodes keep unconfirmed transactions until
+        a block has been broadcasted.  During the block's validation process, the transactions
+        should be compared with the nodes' mempool.
+        '''
+        unconfirmed_transaction = None
+        if len(self.unconfirmed_transactions) > 0:
+            self.unconfirmed_transactions_lock.acquire()
+            try:
+                unconfirmed_transaction = self.unconfirmed_transactions.pop()
+            finally:
+                self.unconfirmed_transactions_lock.release()
+        return unconfirmed_transaction
 
     def push_unconfirmed_transaction(self, transaction):
+        status = False
+        if self.validate_transaction(transaction):
+            self.unconfirmed_transactions_lock.acquire()
+            try:
+                for t in self.unconfirmed_transactions:
+                    if transaction.fee <= t.fee:
+                        self.unconfirmed_transactions.insert(self.unconfirmed_transactions.index(t), transaction)
+                        status = True
+                        break
+                if status is False:
+                    self.unconfirmed_transactions.append(transaction)
+                    status = True
+            finally:
+                self.unconfirmed_transactions_lock.release()
+        return status
+
+    def remove_unconfirmed_transaction(self, transaction_hash):
+        status = False
+        self.unconfirmed_transactions_lock.acquire()
         try:
-            self.unconfirmed_transactions.put(transaction, block=False)
-        except Full as fe:
-            logger.debug('Unconfirmed transactions queue is full: {}'.format(fe.message))
-            return False
-        return True
+            for t in self.unconfirmed_transactions:
+                if t.tx_hash == transaction_hash:
+                    self.unconfirmed_transactions.pop(self.unconfirmed_transactions.index(t))
+                    status = True
+                    break
+        finally:
+            self.unconfirmed_transactions_lock.release()
+        return status
 
     def __str__(self):
         return str(self.__dict__)
