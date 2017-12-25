@@ -60,7 +60,7 @@ class TestNode(unittest.TestCase):
                 patch("crankycoin.time.time", return_value="1508823223") as patched_time_time, \
                 patch("crankycoin.requests.post") as patched_requests:
 
-            transaction = Transaction("source", "destination", 0)
+            transaction = Transaction("source", "destination", 0, 0)
             node = FullNode("127.0.0.1", "reward_address")
             node.full_nodes = {"127.0.0.1", "127.0.0.2", "127.0.0.3"}
 
@@ -68,9 +68,9 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
-                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
-                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
             ], True)
 
     def test_broadcast_transaction_whenRequestException_thenFailsGracefully(self):
@@ -79,7 +79,7 @@ class TestNode(unittest.TestCase):
                 patch("crankycoin.time.time", return_value="1508823223") as patched_time_time, \
                 patch("crankycoin.requests.post", side_effect=requests.exceptions.RequestException()) as patched_requests:
 
-            transaction = Transaction("source", "destination", 0)
+            transaction = Transaction("source", "destination", 0, 0)
             node = FullNode("127.0.0.1", "reward_address")
             node.full_nodes = {"127.0.0.1", "127.0.0.2", "127.0.0.3"}
 
@@ -87,9 +87,9 @@ class TestNode(unittest.TestCase):
 
             patched_request_nodes_from_all.assert_called_once()
             patched_requests.assert_has_calls([
-                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
-                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
-                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
+                call("http://127.0.0.1:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.2:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'}),
+                call("http://127.0.0.3:30013/transactions", json={'transaction': '{"amount": 0, "destination": "destination", "fee": 0, "signature": null, "source": "source", "timestamp": 1508823223, "tx_hash": null}'})
             ], True)
 
     def test_request_block_whenIndexIsLatest_thenRequestsLatestBlockFromNode(self):

@@ -31,12 +31,14 @@ class TestBlockchain(unittest.TestCase):
         genesis_transaction_one = Transaction(
             "0",
             "03dd1e57d05d9cab1d8d9b727568ad951ac2d9ecd082bc36f69e021b8427812924",
-            1000
+            500000,
+            0
         )
         genesis_transaction_two = Transaction(
             "0",
             "03dd1e3defd36c8c0c7282ca1a324851efdb15f742cac0c5b258ef7b290ece9e5d",
-            1000
+            500000,
+            0
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
 

@@ -49,8 +49,8 @@ def client():
                 else:
                     print client.get_balance()
             elif cmd_split[0] == "send":
-                if len(cmd_split) == 3:
-                    print client.create_transaction(cmd_split[1], float(cmd_split[2]))
+                if len(cmd_split) == 4:
+                    print client.create_transaction(cmd_split[1], float(cmd_split[2]), float(cmd_split[3]))
                 else:
                     print("\nRequires destination and amount\n")
             elif cmd_split[0] == "publickey":

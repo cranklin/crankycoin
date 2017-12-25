@@ -375,6 +375,10 @@ class FullNode(NodeMixin):
         }
         return json.dumps(nodes)
 
+    @app.route('/status', methods=['GET'])
+    def get_status(self, request):
+        return json.dumps(config['network'])
+
     @app.route('/transactions', methods=['POST'])
     def post_transactions(self, request):
         body = json.loads(request.content.read())

@@ -36,12 +36,14 @@ class Blockchain(object):
         genesis_transaction_one = Transaction(
             "0",
             "03dd1e57d05d9cab1d8d9b727568ad951ac2d9ecd082bc36f69e021b8427812924",
-            1000
+            500000,
+            0
         )
         genesis_transaction_two = Transaction(
             "0",
             "03dd1e3defd36c8c0c7282ca1a324851efdb15f742cac0c5b258ef7b290ece9e5d",
-            1000
+            500000,
+            0
         )
         genesis_transactions = [genesis_transaction_one, genesis_transaction_two]
         genesis_block = Block(0, genesis_transactions, 0, 0, 0)
@@ -153,6 +155,7 @@ class Blockchain(object):
                 unconfirmed_transaction_json.get('source'),
                 unconfirmed_transaction_json.get('destination'),
                 unconfirmed_transaction_json.get('amount'),
+                unconfirmed_transaction_json.get('fee'),
                 unconfirmed_transaction_json.get('signature')
             )
             if unconfirmed_transaction.tx_hash != unconfirmed_transaction_json.get('tx_hash'):
@@ -173,6 +176,7 @@ class Blockchain(object):
             "0",
             reward_address,
             self.get_reward(new_block_id),
+            0,
             "0"
         )
 
