@@ -1,4 +1,3 @@
-import hashlib
 import time
 from math import floor
 from multiprocessing import Lock, Manager

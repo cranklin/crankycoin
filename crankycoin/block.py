@@ -1,6 +1,6 @@
 import time
-import hashlib
 import json
+import pyscrypt
 
 
 class Block(object):
@@ -69,7 +69,7 @@ class Block(object):
 
     def _calculate_block_hash(self):
         """
-        :return: sha256 hash
+        :return: scrypt hash
         :rtype: str
         """
         data = {
@@ -79,8 +79,14 @@ class Block(object):
             "transactions": [t.tx_hash for t in self._transactions],
             "nonce": self._nonce
         }
-        hash_object = hashlib.sha256(json.dumps(data))
-        return hash_object.hexdigest()
+        hash_object = pyscrypt.hash(
+            password=json.dumps(data),
+            salt="salt",
+            N=1024,
+            r=1,
+            p=1,
+            dkLen=32)
+        return hash_object.encode('hex')
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
