@@ -52,9 +52,9 @@ class Block(object):
         """
         self._index = index
         self._transactions = transactions
-        self._current_hash = self._calculate_block_hash()
         merkle_root = self._calculate_merkle_root()
         self.block_header = BlockHeader(previous_hash, merkle_root, timestamp)
+        self._current_hash = self._calculate_block_hash()
 
     @property
     def index(self):
@@ -99,14 +99,14 @@ class Block(object):
             for i in range(0, len(merkle_base), 2):
                 if i == len(merkle_base) - 1:
                     temp_merkle_base.append(
-                        hashlib.sha256(merkle_base[i]).hex_digest()
+                        hashlib.sha256(merkle_base[i]).hexdigest()
                     )
                 else:
                     temp_merkle_base.append(
-                        hashlib.sha256(merkle_base[i] + merkle_base[i+1]).hex_digest()
+                        hashlib.sha256(merkle_base[i] + merkle_base[i+1]).hexdigest()
                     )
             merkle_base = temp_merkle_base
-        return merkle_base
+        return merkle_base[0]
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
