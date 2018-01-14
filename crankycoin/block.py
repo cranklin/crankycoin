@@ -1,13 +1,45 @@
+import hashlib
 import time
 import json
 import pyscrypt
+
+from config import *
+
+
+class BlockHeader(object):
+
+    def __init__(self, previous_hash, merkle_root, nonce=0):
+        self.version = config['network']['version']
+        self.previous_hash = previous_hash
+        self.merkle_root = merkle_root
+        self.nonce = nonce
+        self.timestamp = int(time.time())
+
+    def to_hashable(self):
+        return "{0:0>8}".format(self.version, 'x') + \
+            self.previous_hash + \
+            self.merkle_root + \
+            format(self.timestamp, 'x') + \
+            "{0:0>8}".format(self.nonce, 'x')
+
+    def __repr__(self):
+        return "<Block Header {}>".format(self.merkle_root)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self == other
 
 
 class Block(object):
 
     transactions = []
 
-    def __init__(self, index, transactions, previous_hash, timestamp, nonce=0):
+    def __init__(self, index, transactions, previous_hash, timestamp):
         """
         :param index: index # of block
         :type index: int
@@ -15,19 +47,14 @@ class Block(object):
         :type transactions: list of transaction objects
         :param previous_hash: previous block hash
         :type previous_hash: str
-        :param current_hash: current block hash
-        :type current_hash: str
         :param timestamp: timestamp of block mined
         :type timestamp: int
-        :param nonce: nonce
-        :type nonce: int
         """
         self._index = index
         self._transactions = transactions
-        self._previous_hash = previous_hash
-        self._nonce = nonce
-        self._timestamp = timestamp if timestamp is not None else int(time.time())
         self._current_hash = self._calculate_block_hash()
+        merkle_root = self._calculate_merkle_root()
+        self.block_header = BlockHeader(previous_hash, merkle_root, timestamp)
 
     @property
     def index(self):
@@ -38,16 +65,8 @@ class Block(object):
         return self._transactions
 
     @property
-    def previous_hash(self):
-        return self._previous_hash
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
     def current_hash(self):
-        return self._current_hash
+        return self._calculate_block_hash()
 
     @property
     def hash_difficulty(self):
@@ -58,42 +77,43 @@ class Block(object):
             difficulty += 1
         return difficulty
 
-    @property
-    def nonce(self):
-        return self._nonce
-
-    @nonce.setter
-    def nonce(self, value):
-        self._nonce = value
-        self._current_hash = self._calculate_block_hash()
-
     def _calculate_block_hash(self):
         """
         :return: scrypt hash
         :rtype: str
         """
-        data = {
-            "index": self._index,
-            "previous_hash": self._previous_hash,
-            "timestamp": self._timestamp,
-            "transactions": [t.tx_hash for t in self._transactions],
-            "nonce": self._nonce
-        }
+        header = self.block_header.to_hashable()
         hash_object = pyscrypt.hash(
-            password=json.dumps(data),
-            salt="salt",
+            password=header,
+            salt=header,
             N=1024,
             r=1,
             p=1,
             dkLen=32)
         return hash_object.encode('hex')
 
+    def _calculate_merkle_root(self):
+        merkle_base = [t.tx_hash for t in self._transactions]
+        while len(merkle_base) > 1:
+            temp_merkle_base = []
+            for i in range(0, len(merkle_base), 2):
+                if i == len(merkle_base) - 1:
+                    temp_merkle_base.append(
+                        hashlib.sha256(merkle_base[i]).hex_digest()
+                    )
+                else:
+                    temp_merkle_base.append(
+                        hashlib.sha256(merkle_base[i] + merkle_base[i+1]).hex_digest()
+                    )
+            merkle_base = temp_merkle_base
+        return merkle_base
+
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
                           sort_keys=True)
 
     def __repr__(self):
-        return "<Crankycoin Block {}>".format(self._index)
+        return "<Block {}>".format(self._index)
 
     def __str__(self):
         return str(self.__dict__)

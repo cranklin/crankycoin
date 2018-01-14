@@ -4,7 +4,6 @@ from multiprocessing import Lock, Manager
 from Queue import Empty, Full
 
 from block import *
-from config import *
 from errors import *
 from transaction import *
 
@@ -194,7 +193,8 @@ class Blockchain(object):
         timestamp = int(time.time())
 
         i = 0
-        block = Block(new_block_id, transactions, previous_hash, timestamp, i)
+        block = Block(new_block_id, transactions, previous_hash, timestamp)
+
         while block.hash_difficulty < self.calculate_hash_difficulty():
             latest_block = self.get_latest_block()
             if latest_block.index >= new_block_id or latest_block.current_hash != previous_hash:
@@ -206,7 +206,7 @@ class Blockchain(object):
                         self.push_unconfirmed_transaction(transaction)
                 return None
             i += 1
-            block.nonce = i
+            block.block_header.nonce = i
         return block
 
     def get_transaction_history(self, address):

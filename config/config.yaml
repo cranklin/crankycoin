@@ -6,7 +6,7 @@ user:
 network:
     name: "Cranky Coin"
     ticker_symbol: "CRNK"
-    version: "0.1"
+    version: 1
     initial_coins_per_block: 50
     halving_frequency: 210000
     max_transactions_per_block: 2000
