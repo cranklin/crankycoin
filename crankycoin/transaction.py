@@ -47,19 +47,6 @@ class Transaction(object):
     def signature(self):
         return self._signature
 
-    @classmethod
-    def from_json(cls, transaction_json):
-        transaction = cls.__init__(
-            transaction_json['source'],
-            transaction_json['destination'],
-            transaction_json['amount'],
-            transaction_json['fee'],
-            transaction_json.get('signature', None)
-        )
-        if transaction_json.get('tx_hash', None) != transaction.tx_hash:
-            raise InvalidTransactionHash(transaction_json.get('tx_hash'))
-        return transaction
-
     def _calculate_tx_hash(self):
         """
         Calculates sha-256 hash of transaction (source, destination, amount, timestamp, signature)

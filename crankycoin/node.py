@@ -121,7 +121,14 @@ class FullNode(NodeMixin):
                 block_dict = json.loads(response.json())
                 block = Block(
                     block_dict['index'],
-                    block_dict['transactions'],
+                    [Transaction(
+                        transaction['source'],
+                        transaction['destination'],
+                        transaction['amount'],
+                        transaction['fee'],
+                        transaction['signature'])
+                        for transaction in block_dict['transactions']
+                     ],
                     block_dict['previous_hash'],
                     block_dict['timestamp'],
                     block_dict['nonce']
