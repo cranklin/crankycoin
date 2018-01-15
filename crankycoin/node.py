@@ -167,7 +167,14 @@ class FullNode(NodeMixin):
                 for block_dict in blocks_dict:
                     block = Block(
                         block_dict['index'],
-                        block_dict['transactions'],
+                        [Transaction(
+                            transaction['source'],
+                            transaction['destination'],
+                            transaction['amount'],
+                            transaction['fee'],
+                            transaction['signature'])
+                         for transaction in block_dict['transactions']
+                         ],
                         block_dict['previous_hash'],
                         block_dict['timestamp'],
                         block_dict['nonce']
@@ -190,7 +197,14 @@ class FullNode(NodeMixin):
                 for block_dict in blocks_dict:
                     block = Block(
                         block_dict['index'],
-                        block_dict['transactions'],
+                        [Transaction(
+                            transaction['source'],
+                            transaction['destination'],
+                            transaction['amount'],
+                            transaction['fee'],
+                            transaction['signature'])
+                         for transaction in block_dict['transactions']
+                         ],
                         block_dict['previous_hash'],
                         block_dict['timestamp'],
                         block_dict['nonce']
@@ -393,7 +407,12 @@ class FullNode(NodeMixin):
     @app.route('/transactions', methods=['POST'])
     def post_transactions(self, request):
         body = json.loads(request.content.read())
-        transaction = Transaction.from_json(body['transaction'])
+        transaction = Transaction(
+            body['transaction']['source'],
+            body['transaction']['destination'],
+            body['transaction']['amount'],
+            body['transaction']['fee'],
+            body['transaction']['signature'])
         if transaction.tx_hash != body['transaction']['tx_hash']:
             logger.warn("Invalid transaction hash: {} should be {}".format(body['transaction']['tx_hash'], transaction.tx_hash))
             request.setResponseCode(406)
@@ -417,12 +436,24 @@ class FullNode(NodeMixin):
         body = json.loads(request.content.read())
         remote_block = json.loads(body['block'])
         remote_host = body['host']
-        transactions = [
-            Transaction.from_json(transaction_json) for transaction_json in remote_block['transactions']
-            ]
+        transactions = [Transaction(
+            transaction['source'],
+            transaction['destination'],
+            transaction['amount'],
+            transaction['fee'],
+            transaction['signature'])
+            for transaction in remote_block['transactions']
+        ]
         block = Block(
             remote_block['index'],
-            transactions,
+            [Transaction(
+                transaction['source'],
+                transaction['destination'],
+                transaction['amount'],
+                transaction['fee'],
+                transaction['signature'])
+             for transaction in remote_block['transactions']
+             ],
             remote_block['previous_hash'],
             remote_block['timestamp'],
             remote_block['nonce']
