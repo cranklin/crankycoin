@@ -4,16 +4,17 @@ import json
 import pyscrypt
 
 from config import *
+from errors import *
 
 
 class BlockHeader(object):
 
-    def __init__(self, previous_hash, merkle_root, nonce=0):
+    def __init__(self, previous_hash, merkle_root, timestamp=None, nonce=0):
         self.version = config['network']['version']
         self.previous_hash = previous_hash
         self.merkle_root = merkle_root
         self.nonce = nonce
-        self.timestamp = int(time.time())
+        self.timestamp = timestamp if timestamp is not None else int(time.time())
 
     def to_hashable(self):
         return "{0:0>8}".format(self.version, 'x') + \
@@ -21,6 +22,10 @@ class BlockHeader(object):
             self.merkle_root + \
             format(self.timestamp, 'x') + \
             "{0:0>8}".format(self.nonce, 'x')
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
+                          sort_keys=True)
 
     def __repr__(self):
         return "<Block Header {}>".format(self.merkle_root)
@@ -39,7 +44,7 @@ class Block(object):
 
     transactions = []
 
-    def __init__(self, index, transactions, previous_hash, timestamp):
+    def __init__(self, index, transactions, previous_hash, timestamp=None, nonce=0):
         """
         :param index: index # of block
         :type index: int
@@ -52,9 +57,9 @@ class Block(object):
         """
         self._index = index
         self._transactions = transactions
-        self._current_hash = self._calculate_block_hash()
         merkle_root = self._calculate_merkle_root()
-        self.block_header = BlockHeader(previous_hash, merkle_root, timestamp)
+        self.block_header = BlockHeader(previous_hash, merkle_root, timestamp, nonce)
+        self._current_hash = self._calculate_block_hash()
 
     @property
     def index(self):
@@ -93,20 +98,22 @@ class Block(object):
         return hash_object.encode('hex')
 
     def _calculate_merkle_root(self):
+        if len(self._transactions) < 1:
+            raise InvalidTransactions(self._index, "Zero transactions in block. Coinbase transaction required")
         merkle_base = [t.tx_hash for t in self._transactions]
         while len(merkle_base) > 1:
             temp_merkle_base = []
             for i in range(0, len(merkle_base), 2):
                 if i == len(merkle_base) - 1:
                     temp_merkle_base.append(
-                        hashlib.sha256(merkle_base[i]).hex_digest()
+                        hashlib.sha256(merkle_base[i]).hexdigest()
                     )
                 else:
                     temp_merkle_base.append(
-                        hashlib.sha256(merkle_base[i] + merkle_base[i+1]).hex_digest()
+                        hashlib.sha256(merkle_base[i] + merkle_base[i+1]).hexdigest()
                     )
             merkle_base = temp_merkle_base
-        return merkle_base
+        return merkle_base[0]
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},

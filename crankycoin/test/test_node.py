@@ -95,7 +95,8 @@ class TestNode(unittest.TestCase):
     def test_request_block_whenIndexIsLatest_thenRequestsLatestBlockFromNode(self):
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = '{"nonce": 12345, "index": 35, "transactions": [], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
+        mock_response.json.return_value = '{"nonce": 12345, "index": 35, "transactions": [{"amount": 0, "destination": "destination", "fee": 0, "signature": "signature", "source": "source", "timestamp": 1508823223, "tx_hash": null}], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
+        transaction = Transaction("source", "destination", 0, 0, "signature")
 
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
                 patch("crankycoin.node.Block.current_hash", new_callable=PropertyMock) as patched_block_current_hash, \
@@ -107,17 +108,18 @@ class TestNode(unittest.TestCase):
 
             self.assertIsNotNone(block)
             self.assertEqual(block.index, 35)
-            self.assertEqual(block.transactions, [])
-            self.assertEqual(block.previous_hash, "previous_hash")
+            self.assertEqual(block.transactions, [transaction])
+            self.assertEqual(block.block_header.previous_hash, "previous_hash")
             self.assertEqual(block.current_hash, "current_hash")
-            self.assertEqual(block.timestamp, 1234567890)
-            self.assertEqual(block.nonce, 12345)
+            self.assertEqual(block.block_header.timestamp, 1234567890)
+            self.assertEqual(block.block_header.nonce, 12345)
             patched_requests.assert_called_once_with('http://127.0.0.2:30013/block/latest')
 
     def test_request_block_whenIndexIsNumeric_thenRequestsCorrectBlockFromNode(self):
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = '{"nonce": 12345, "index": 29, "transactions": [], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
+        mock_response.json.return_value = '{"nonce": 12345, "index": 29, "transactions": [{"amount": 0, "destination": "destination", "fee": 0, "signature": "signature", "source": "source", "timestamp": 1508823223, "tx_hash": null}], "timestamp": 1234567890, "current_hash": "current_hash", "previous_hash": "previous_hash"}'
+        transaction = Transaction("source", "destination", 0, 0, "signature")
 
         with patch.object(FullNode, '__init__', return_value=None) as patched_init, \
                 patch("crankycoin.node.Block.current_hash", new_callable=PropertyMock) as patched_block_current_hash, \
@@ -129,11 +131,11 @@ class TestNode(unittest.TestCase):
 
             self.assertIsNotNone(block)
             self.assertEqual(block.index, 29)
-            self.assertEqual(block.transactions, [])
-            self.assertEqual(block.previous_hash, "previous_hash")
+            self.assertEqual(block.transactions, [transaction])
+            self.assertEqual(block.block_header.previous_hash, "previous_hash")
             self.assertEqual(block.current_hash, "current_hash")
-            self.assertEqual(block.timestamp, 1234567890)
-            self.assertEqual(block.nonce, 12345)
+            self.assertEqual(block.block_header.timestamp, 1234567890)
+            self.assertEqual(block.block_header.nonce, 12345)
             patched_requests.assert_called_once_with('http://127.0.0.2:30013/block/29')
 
     def test_request_block_whenRequestException_thenReturnsNone(self):

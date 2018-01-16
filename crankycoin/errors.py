@@ -23,3 +23,7 @@ class GenesisBlockMismatch(BlockchainException):
 
 class InvalidTransactionHash(Exception):
     pass
+
+
+class InvalidCoinbaseTransaction(BlockchainException):
+    pass
