@@ -1501,3 +1501,90 @@ class TestBlockchain(unittest.TestCase):
             )
 
             self.assertFalse(resp)
+
+    def test_calculate_hash_difficulty_whenBlockIndexLessThanAdjustmentSpan_returnsMinimumDifficulty(self):
+        mock_block_header = Mock(BlockHeader)
+        mock_block_header.timestamp = 1516171900
+        mock_block = Mock(Block)
+        mock_block.block_header = mock_block_header
+
+        mock_latest_block_header = Mock(BlockHeader)
+        mock_latest_block_header.timestamp = 1516171900
+        mock_latest_block = Mock(Block)
+        mock_latest_block.block_header = mock_latest_block_header
+        mock_latest_block.index = Blockchain.DIFFICULTY_ADJUSTMENT_SPAN
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block, \
+                patch.object(Blockchain, 'get_block_by_index', return_value=mock_block) as patched_get_block_by_index:
+            subject = Blockchain()
+
+            hash_difficulty = subject.calculate_hash_difficulty()
+
+            self.assertEqual(hash_difficulty, subject.MINIMUM_HASH_DIFFICULTY)
+
+    def test_calculate_hash_difficulty_whenBlockIndexGreaterThanAdjustmentSpanAndOnSchedule_returnsCurrentDifficulty(self):
+        mock_block_header = Mock(BlockHeader)
+        mock_block_header.timestamp = 1516171900
+        mock_block = Mock(Block)
+        mock_block.block_header = mock_block_header
+
+        mock_latest_block_header = Mock(BlockHeader)
+        mock_latest_block_header.timestamp = 1516171900 + (Blockchain.TARGET_TIME_PER_BLOCK * Blockchain.DIFFICULTY_ADJUSTMENT_SPAN)
+        mock_latest_block = Mock(Block)
+        mock_latest_block.block_header = mock_latest_block_header
+        mock_latest_block.index = Blockchain.DIFFICULTY_ADJUSTMENT_SPAN + 1
+        mock_latest_block.hash_difficulty = 10
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block, \
+                patch.object(Blockchain, 'get_block_by_index', return_value=mock_block) as patched_get_block_by_index:
+            subject = Blockchain()
+
+            hash_difficulty = subject.calculate_hash_difficulty()
+
+            self.assertEqual(hash_difficulty, 10)
+
+    def test_calculate_hash_difficulty_whenBlockIndexGreaterThanAdjustmentSpanAndBehindSchedule_returnsReducedDifficulty(self):
+        mock_block_header = Mock(BlockHeader)
+        mock_block_header.timestamp = 1516171900
+        mock_block = Mock(Block)
+        mock_block.block_header = mock_block_header
+
+        mock_latest_block_header = Mock(BlockHeader)
+        mock_latest_block_header.timestamp = 1516172000 + (Blockchain.TARGET_TIME_PER_BLOCK * Blockchain.DIFFICULTY_ADJUSTMENT_SPAN)
+        mock_latest_block = Mock(Block)
+        mock_latest_block.block_header = mock_latest_block_header
+        mock_latest_block.index = Blockchain.DIFFICULTY_ADJUSTMENT_SPAN + 1
+        mock_latest_block.hash_difficulty = 10
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block, \
+                patch.object(Blockchain, 'get_block_by_index', return_value=mock_block) as patched_get_block_by_index:
+            subject = Blockchain()
+
+            hash_difficulty = subject.calculate_hash_difficulty()
+
+            self.assertEqual(hash_difficulty, 9)
+
+    def test_calculate_hash_difficulty_whenBlockIndexGreaterThanAdjustmentSpanAndAheadOfSchedule_returnsIncreasedifficulty(self):
+        mock_block_header = Mock(BlockHeader)
+        mock_block_header.timestamp = 1516171900
+        mock_block = Mock(Block)
+        mock_block.block_header = mock_block_header
+
+        mock_latest_block_header = Mock(BlockHeader)
+        mock_latest_block_header.timestamp = 1516171800 + (Blockchain.TARGET_TIME_PER_BLOCK * Blockchain.DIFFICULTY_ADJUSTMENT_SPAN)
+        mock_latest_block = Mock(Block)
+        mock_latest_block.block_header = mock_latest_block_header
+        mock_latest_block.index = Blockchain.DIFFICULTY_ADJUSTMENT_SPAN + 1
+        mock_latest_block.hash_difficulty = 10
+
+        with patch.object(Blockchain, '__init__', return_value=None) as patched_init, \
+                patch.object(Blockchain, 'get_latest_block', return_value=mock_latest_block) as patched_get_latest_block, \
+                patch.object(Blockchain, 'get_block_by_index', return_value=mock_block) as patched_get_block_by_index:
+            subject = Blockchain()
+
+            hash_difficulty = subject.calculate_hash_difficulty()
+
+            self.assertEqual(hash_difficulty, 11)

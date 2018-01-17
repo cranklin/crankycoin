@@ -253,17 +253,18 @@ class Blockchain(object):
     def calculate_hash_difficulty(self, index=None):
         if index is None:
             block = self.get_latest_block()
+            index = block.index
         else:
             block = self.get_block_by_index(index)
 
         if block.index > self.DIFFICULTY_ADJUSTMENT_SPAN:
             block_delta = self.get_block_by_index(index - self.DIFFICULTY_ADJUSTMENT_SPAN)
-            timestamp_delta = block.timestamp - block_delta.timestamp
+            timestamp_delta = block.block_header.timestamp - block_delta.block_header.timestamp
             # blocks were mined quicker than target
-            if timestamp_delta < self.TARGET_TIME_PER_BLOCK - (self.TARGET_TIME_PER_BLOCK / 10):
+            if timestamp_delta < (self.TARGET_TIME_PER_BLOCK * self.DIFFICULTY_ADJUSTMENT_SPAN):
                 return block.hash_difficulty + 1
             # blocks were mined slower than target
-            elif timestamp_delta > self.TARGET_TIME_PER_BLOCK + (self.TARGET_TIME_PER_BLOCK / 10):
+            elif timestamp_delta > (self.TARGET_TIME_PER_BLOCK * self.DIFFICULTY_ADJUSTMENT_SPAN):
                 return block.hash_difficulty - 1
             # blocks were mined within the target time window
             return block.hash_difficulty
