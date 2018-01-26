@@ -2,6 +2,7 @@ import grequests
 import requests
 from klein import Klein
 from multiprocessing import Process
+from Queue import Empty, Full
 
 from blockchain import *
 from transaction import *
@@ -17,8 +18,10 @@ class NodeMixin(object):
     BLOCKS_URL = config['network']['blocks_url']
     TRANSACTION_HISTORY_URL = config['network']['transaction_history_url']
     BALANCE_URL = config['network']['balance_url']
-    DEFAULT_NODES = config['network']['default_nodes']
-    full_nodes = set(DEFAULT_NODES)
+    DNS_SEEDS = config['network']['dns_seeds']
+    SEED_NODES = config['network']['seed_nodes']
+
+    full_nodes = set(SEED_NODES)
 
     def request_nodes(self, node, port):
         url = self.NODES_URL.format(node, port)

@@ -23,6 +23,7 @@ network:
     transaction_history_url: "http://{}:{}/address/{}/transactions"
     balance_url: "http://{}:{}/address/{}/balance"
     status_url: "http://{}:{}/status"
-    default_nodes:
+    dns_seeds: []
+    seed_nodes:
         - "127.0.0.1"
         - "127.0.0.2"

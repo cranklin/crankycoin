@@ -1,7 +1,6 @@
 import time
 from math import floor
 from multiprocessing import Lock, Manager
-from Queue import Empty, Full
 
 from block import *
 from errors import *
