@@ -2,7 +2,14 @@ user:
     public_key:
     encrypted_private_key:
     ip: "127.0.0.1"
-    block_path:
+    chain_db: "./data/chaindata.db"
+    pool_db: "./data/pool.db"
+    peer_db: "./data/peer.db"
+    max_peers: 30
+    min_peers: 10
+    queue_bind_in: "ipc:///tmp/crank_in"
+    queue_bind_out: "ipc:///tmp/crank_out"
+    queue_processing_workers: 2
 network:
     name: "Cranky Coin"
     ticker_symbol: "CRNK"
@@ -10,20 +17,21 @@ network:
     initial_coins_per_block: 50
     halving_frequency: 210000
     max_transactions_per_block: 2000
-    minimum_hash_difficulty: 4
+    minimum_hash_difficulty: 1
     target_time_per_block: 600
     difficulty_adjustment_span: 500
     significant_digits: 8
+    short_chain_tolerance: 3
     full_node_port: 30013
-    nodes_url: "http://{}:{}/nodes"
-    transactions_url: "http://{}:{}/transactions"
-    block_url: "http://{}:{}/block/{}"
-    blocks_range_url: "http://{}:{}/blocks/{}/{}"
-    blocks_url: "http://{}:{}/blocks"
+    downtime_threshold: 20
+    nodes_url: "http://{}:{}/nodes/"
+    transactions_url: "http://{}:{}/transactions/{}"
+    transactions_inv_url: "http://{}:{}/transactions/block_hash/{}"
+    unconfirmed_transactions_url: "http://{}:{}/unconfirmed_tx/{}"
+    blocks_inv_url: "http://{}:{}/blocks/start/{}/end/{}"
+    blocks_url: "http://{}:{}/blocks/{}/{}"
     transaction_history_url: "http://{}:{}/address/{}/transactions"
+    inbox_url: "http://{}:{}/inbox/"
     balance_url: "http://{}:{}/address/{}/balance"
-    status_url: "http://{}:{}/status"
-    dns_seeds: []
-    seed_nodes:
-        - "127.0.0.1"
-        - "127.0.0.2"
+    status_url: "http://{}:{}/status/"
+    connect_url: "http://{}:{}/connect/"

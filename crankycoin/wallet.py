@@ -1,10 +1,10 @@
 import coincurve
+import json
 import random
-import requests
 
-from config import *
-from node import NodeMixin
-from transaction import *
+from crankycoin import logger
+from crankycoin.node import NodeMixin
+from crankycoin.models.transaction import Transaction
 
 
 class Client(NodeMixin):
@@ -12,13 +12,15 @@ class Client(NodeMixin):
     __private_key__ = None
     __public_key__ = None
 
-    def __init__(self, private_key=None):
+    def __init__(self, peers, api_client, private_key=None):
         if private_key is not None:
             self.__private_key__ = coincurve.PrivateKey.from_hex(private_key)
         else:
             logger.info("No private key provided. Generating new key pair.")
             self.__private_key__ = coincurve.PrivateKey()
         self.__public_key__ = self.__private_key__.public_key
+        super(Client, self).__init__(peers, api_client)
+        self.check_peers()
 
     def get_public_key(self):
         return self.__public_key__.format(compressed=True).encode('hex')
@@ -31,44 +33,41 @@ class Client(NodeMixin):
 
     def verify(self, signature, message, public_key=None):
         if public_key is not None:
-            return coincurve.PublicKey(public_key).verify(signature, message)
+            return coincurve.PublicKey(public_key.decode('hex')).verify(signature.decode('hex'), message)
         return self.__public_key__.verify(signature, message)
 
     def get_balance(self, address=None, node=None):
         if address is None:
             address = self.get_public_key()
         if node is None:
-            node = random.sample(self.full_nodes, 1)[0]
-        url = self.BALANCE_URL.format(node, self.FULL_NODE_PORT, address)
-        try:
-            response = requests.get(url)
-            return response.json()
-        except requests.exceptions.RequestException as re:
-            pass
-        return None
+            peers = self.discover_peers()
+            node = random.sample(peers, 1)[0]
+        return self.api_client.get_balance(address, node)
 
     def get_transaction_history(self, address=None, node=None):
         if address is None:
             address = self.get_public_key()
         if node is None:
-            node = random.sample(self.full_nodes, 1)[0]
-        url = self.TRANSACTION_HISTORY_URL.format(node, self.FULL_NODE_PORT, address)
-        try:
-            response = requests.get(url)
-            return response.json()
-        except requests.exceptions.RequestException as re:
-            pass
-        return None
+            peers = self.discover_peers()
+            node = random.sample(peers, 1)[0]
+        return self.api_client.get_transaction_history(address, node)
 
-    def create_transaction(self, to, amount, fee):
+    def create_transaction(self, to, amount, fee, prev_hash):
+        self.check_peers()
         transaction = Transaction(
             self.get_public_key(),
             to,
             amount,
-            fee
+            fee,
+            prev_hash=prev_hash
         )
         transaction.sign(self.get_private_key())
-        return self.broadcast_transaction(transaction)
+        return self.api_client.broadcast_transaction(transaction)
+
+    def check_peers(self):
+        known_peers = self.discover_peers()
+        self.api_client.check_peers_light(known_peers)
+        return
 
 
 if __name__ == "__main__":

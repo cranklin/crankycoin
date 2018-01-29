@@ -4,30 +4,43 @@ from __future__ import print_function
 
 import argparse
 import hashlib
+import requests
 import sys
+import time
 from getpass import getpass
 from Cryptodome.Cipher import AES
-from crankycoin import *
+from crankycoin import config, logger
+from crankycoin.node import FullNode
+from crankycoin.wallet import Client
+from crankycoin.miner import Miner
+from crankycoin.repository.blockchain import Blockchain
+from crankycoin.repository.mempool import Mempool
+from crankycoin.repository.peers import Peers
+from crankycoin.services.validator import Validator
+from crankycoin.services.api_client import ApiClient
 
 _PY3 = sys.version_info[0] > 2
 if _PY3:
     raw_input = input
+
 
 def client():
     helptext = '''
         Available commands:
         ===================
         balance <public key (optional)>
-        send <destination> <amount>
+        send <destination> <amount> <fee>
         publickey
         privatekey
         history <public key (optional)>
         quit or exit
     '''
+    peers = Peers()
+    api_client = ApiClient(peers)
     encrypted = config['user']['encrypted_private_key']
     if encrypted is None:
         print("\n\nNo private key provided. A new wallet will be generated for you...\n\n")
-        client = Client()
+        wallet = Client(peers, api_client)
     else:
         passphrase = getpass("Enter passphrase: ")
         encrypted = encrypted.decode('hex')
@@ -38,7 +51,7 @@ def client():
         cipher = AES.new(hashedpass, AES.MODE_EAX, nonce)
         try:
             private_key = cipher.decrypt_and_verify(ciphertext, tag)
-            client = Client(private_key)
+            wallet = Client(peers, api_client, private_key)
         except ValueError as ve:
             logger.warn('Invalid passphrase')
             print("\n\nInvalid passphrase\n\n")
@@ -50,23 +63,23 @@ def client():
         try:
             if cmd_split[0] == "balance":
                 if len(cmd_split) == 2:
-                    print(client.get_balance(cmd_split[1]))
+                    print(wallet.get_balance(cmd_split[1]))
                 else:
-                    print(client.get_balance())
+                    print(wallet.get_balance())
             elif cmd_split[0] == "send":
                 if len(cmd_split) == 4:
-                    print(client.create_transaction(cmd_split[1], float(cmd_split[2]), float(cmd_split[3])))
+                    print(wallet.create_transaction(cmd_split[1], float(cmd_split[2]), float(cmd_split[3])))
                 else:
-                    print("\nRequires destination and amount\n")
+                    print("\nRequires destination, amount, fee\n")
             elif cmd_split[0] == "publickey":
-                print(client.get_public_key())
+                print(wallet.get_public_key())
             elif cmd_split[0] == "privatekey":
-                print(client.get_private_key())
+                print(wallet.get_private_key())
             elif cmd_split[0] == "history":
                 if len(cmd_split) == 2:
-                    print(client.get_transaction_history(cmd_split[1]))
+                    print(wallet.get_transaction_history(cmd_split[1]))
                 else:
-                    print(client.get_transaction_history())
+                    print(wallet.get_transaction_history())
             elif cmd_split[0] in ("quit", "exit"):
                 sys.exit(0)
             else:  # help
@@ -79,14 +92,22 @@ def full():
     helptext = '''
         Available commands:
         ===================
-        synchronize
-        addnode <host>
+        balance <public key (optional)>
+        history <public key (optional)>
         getnodes
-        loadblockchain <path/to/blockchain>
         getblock <index (optional)>
         getblocks <start index (optional)> <stop index (optional)>
+        mempoolcount
+        getmempool
+        getunconfirmedtx <tx hash>
+        mine <start | stop>
         quit or exit
     '''
+    peers = Peers()
+    api_client = ApiClient(peers)
+    blockchain = Blockchain()
+    mempool = Mempool()
+    validator = Validator()
     ip = config['user']['ip']
     public_key = config['user']['public_key']
     if ip is None or public_key is None:
@@ -94,96 +115,86 @@ def full():
         sys.exit(1)
     else:
         print("\n\nfull node starting...\n\n")
-        fullnode = FullNode(ip, public_key)
+        full_node = FullNode(peers, api_client, blockchain, mempool, validator)
+        full_node.start()
+        miner = Miner(blockchain, mempool)
+        mining = False
 
     while True:
         cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
         cmd_split = cmd.split()
         try:
-            if cmd_split[0] == "synchronize":
-                print(fullnode.synchronize())
-            elif cmd_split[0] == "addnode":
+            if cmd_split[0] == "balance":
                 if len(cmd_split) == 2:
-                    print(fullnode.add_node(cmd_split[1]))
+                    url = full_node.BALANCE_URL.format("localhost", full_node.FULL_NODE_PORT, cmd_split[1])
                 else:
-                    print("\nRequires host of node to add\n")
+                    url = full_node.BALANCE_URL.format("localhost", full_node.FULL_NODE_PORT, public_key)
+                response = requests.get(url)
+                print(response.json())
+            elif cmd_split[0] == "history":
+                if len(cmd_split) == 2:
+                    url = full_node.TRANSACTION_HISTORY_URL.format("localhost", full_node.FULL_NODE_PORT, cmd_split[1])
+                    response = requests.get(url)
+                else:
+                    url = full_node.TRANSACTION_HISTORY_URL.format("localhost", full_node.FULL_NODE_PORT, public_key)
+                    response = requests.get(url)
+                print(response.json())
             elif cmd_split[0] == "getnodes":
-                print(fullnode.full_nodes)
-            elif cmd_split[0] == "loadblockchain":
-                if len(cmd_split) == 2:
-                    print(fullnode.load_blockchain(cmd_split[1]))
-                else:
-                    print("\nRequires path/to/blockchain\n")
+                url = full_node.NODES_URL.format("localhost", full_node.FULL_NODE_PORT)
+                response = requests.get(url)
+                print(response.json())
             elif cmd_split[0] == "getblock":
                 if len(cmd_split) == 2:
-                    print(fullnode.blockchain.get_block_by_index(int(cmd_split[1])))
+                    url = full_node.BLOCKS_URL.format("localhost", full_node.FULL_NODE_PORT, cmd_split[1])
                 else:
-                    print(fullnode.blockchain.get_latest_block())
+                    url = full_node.BLOCKS_URL.format("localhost", full_node.FULL_NODE_PORT, "latest")
+                response = requests.get(url)
+                print(response.json())
             elif cmd_split[0] == "getblocks":
                 if len(cmd_split) == 3:
-                    print(fullnode.blockchain.get_blocks_range(int(cmd_split[1]), int(cmd_split[2])))
+                    url = full_node.BLOCKS_INV_URL.format("localhost", full_node.FULL_NODE_PORT, cmd_split[1], cmd_split[2])
                 else:
-                    print(fullnode.blockchain.get_all_blocks())
+                    url = full_node.BLOCKS_URL.format("localhost", full_node.FULL_NODE_PORT, "")
+                response = requests.get(url)
+                print(response.json())
+            elif cmd_split[0] == "mempoolcount":
+                url = full_node.UNCONFIRMED_TRANSACTIONS_URL.format("localhost", full_node.FULL_NODE_PORT, "count")
+                response = requests.get(url)
+                print(response.json())
+            elif cmd_split[0] == "getmempool":
+                url = full_node.UNCONFIRMED_TRANSACTIONS_URL.format("localhost", full_node.FULL_NODE_PORT, "")
+                response = requests.get(url)
+                print(response.json())
+            elif cmd_split[0] == "getunconfirmedtx":
+                if len(cmd_split) == 2:
+                    url = full_node.UNCONFIRMED_TRANSACTIONS_URL.format("localhost", full_node.FULL_NODE_PORT, cmd_split[1])
+                    response = requests.get(url)
+                    print(response.json())
+                else:
+                    print("\nRequires tx hash\n")
+            elif cmd_split[0] == "mine":
+                if len(cmd_split) == 2:
+                    if cmd_split[1] == "start":
+                        if mining is False:
+                            print("\n\nminer starting...\n\n")
+                            mining = True
+                            miner.start()
+                    elif cmd_split[1] == "stop":
+                        if mining is True:
+                            print("\n\nminer shutting down...\n\n")
+                            mining = False
+                            miner.shutdown()
+                    else:
+                        print("\nRequires: start | stop")
+                else:
+                    print("\nRequires: start | stop")
             elif cmd_split[0] in ("quit", "exit"):
-                fullnode.shutdown(True)
-                sys.exit(0)
-            else:  # help
-                print(helptext)
-        except IndexError:
-            pass
-
-
-def miner():
-    helptext = '''
-        Available commands:
-        ===================
-        synchronize
-        addnode <host>
-        getnodes
-        loadblockchain <path/to/blockchain>
-        getblock <index (optional)>
-        getblocks <start index (optional)> <stop index (optional)>
-        quit or exit
-    '''
-    ip = config['user']['ip']
-    public_key = config['user']['public_key']
-    if ip is None or public_key is None:
-        print("\n\npublic key and IP must be provided.\n\n")
-        sys.exit(1)
-    else:
-        print("\n\nmining node starting...\n\n")
-        fullnode = FullNode(ip, public_key, mining=True)
-
-    while True:
-        cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
-        cmd_split = cmd.split()
-        try:
-            if cmd_split[0] == "synchronize":
-                print(fullnode.synchronize())
-            elif cmd_split[0] == "addnode":
-                if len(cmd_split) == 2:
-                    print(fullnode.add_node(cmd_split[1]))
-                else:
-                    print("\nRequires host of node to add\n")
-            elif cmd_split[0] == "getnodes":
-                print(fullnode.full_nodes)
-            elif cmd_split[0] == "loadblockchain":
-                if len(cmd_split) == 2:
-                    print(fullnode.load_blockchain(cmd_split[1]))
-                else:
-                    print("\nRequires path/to/blockchain\n")
-            elif cmd_split[0] == "getblock":
-                if len(cmd_split) == 2:
-                    print(fullnode.blockchain.get_block_by_index(int(cmd_split[1])))
-                else:
-                    print(fullnode.blockchain.get_latest_block())
-            elif cmd_split[0] == "getblocks":
-                if len(cmd_split) == 3:
-                    print(fullnode.blockchain.get_blocks_range(int(cmd_split[1]), int(cmd_split[2])))
-                else:
-                    print(fullnode.blockchain.get_all_blocks())
-            elif cmd_split[0] in ("quit", "exit"):
-                fullnode.shutdown(True)
+                if mining is True:
+                    print("\n\nminer shutting down...\n\n")
+                    miner.shutdown()
+                    time.sleep(2)
+                full_node.shutdown()
+                time.sleep(2)
                 sys.exit(0)
             else:  # help
                 print(helptext)
@@ -193,14 +204,12 @@ def miner():
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Starts a ' + config['network']['name'] + ' node')
-    parser.add_argument('mode', metavar='type', nargs='?', default=None, help='client | full | miner')
+    parser.add_argument('mode', metavar='type', nargs='?', default=None, help='client | full')
     args = parser.parse_args()
     if args.mode == "client":
         client()
     elif args.mode == "full":
         full()
-    elif args.mode == "miner":
-        miner()
     else:
         print("Node operation mode not specified")
 
