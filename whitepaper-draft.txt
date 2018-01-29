@@ -1,0 +1,117 @@
+Design Motivations
+==================
+first generation single dimensional blockchain design
+Brewer's Theorem.  Transaction speed less important.  Durability + Security is priority
+Upload assets or asset hashes and allow it to be traded like first class citizens on the blockchain without relying on a state machine
+Simplicity first.  Simple contracts over smart contracts.  No state change per contract via transaction receipts.
+Horizontal scalability without sacrificing simplicity.
+Python. Optional C compiled modules for mining.  Multiprocessing with process safe db (sqlite) and messaging queue (zeromq)
+zeromq queue with push/pull proxy bound to a UNIX socket
+Bottle for controller layer
+
+Attack Vectors
+==============
+Sybil Attack:
+-------------
+On-chain registry (PoC)
+
+Double-spend Attack:
+--------------------
+Calculated account balances rather than UTXO (Bitcoin)
+Unique transaction hashes of signed transactions includes wallet generated transaction timestamp
+Duplicate transaction hashes are rejected - transactions of the same amount, sent the same recipient at with the exact same timestamp are not allowed
+Confirmations
+Previous transaction hash rather than using an incremental nonce (Ethereum)
+
+Replay Attack:
+--------------
+Prefixed wallet addresses
+
+DDOS Attack:
+------------
+Well-formed transactions POSTS (from light clients) and smaller/inexpensive GET requests will be served to the public
+Other calls will be restricted to known peers or dropped with a 403
+accepted POST requests will be asynchronously placed on a queue before validating/processing
+GET requests will be served synchronously with an optional caching layer
+endpoints are either permissioned or public.  Permissioned endpoints will require a prior handshaked/verified peer.
+permissioned endpoints are typically more costly
+
+Peer Discovery
+==============
+a handshake process which validates a nonce, config, version
+min and max peers are configurable
+
+
+PoW
+===
+Scrypt N=1024,r=1,p=1,dkLen=32
+
+Hash Difficulty Adjustment
+==========================
+block_delta = self.get_block_header_by_height(height - self.DIFFICULTY_ADJUSTMENT_SPAN)
+timestamp_delta = block.block_header.timestamp - block_delta.block_header.timestamp
+# blocks were mined quicker than target
+if timestamp_delta < (self.TARGET_TIME_PER_BLOCK * self.DIFFICULTY_ADJUSTMENT_SPAN):
+	return block.hash_difficulty + 1
+# blocks were mined slower than target
+elif timestamp_delta > (self.TARGET_TIME_PER_BLOCK * self.DIFFICULTY_ADJUSTMENT_SPAN):
+	return block.hash_difficulty - 1
+# blocks were mined within the target time window
+return block.hash_difficulty
+
+Wallet
+======
+ECC variant SECP256k1 with Prefix to distinguish Mainnet and Testnet(s)
+
+Uncle Blocks
+============
+stored with incrementing branch number in DB (not in block data)
+All blocks will only be stored if there is a stored block with the hash matching the new block's previous hash.  If a block of that height exists, the branch number is incremented by 1.  Uncle blocks will be omitted (and pruned in the future) if the uncle block's height is less than 6 below the main branch present height
+
+Uncle Transactions
+==================
+Transactions are stored in a similar fashion.  Primary keys are composites of the transaction hash and branch number as the only guarantee for uniqueness sinc uncle blocks may reference the same transaction
+
+Longest Chain
+=============
+In the event that an uncle branch grows taller than the main branch, the branch numbers are swapped for blocks and their transactions.  Transaction hashes are not necessarily unique in storage as duplicates may be stored under a different branch number.  Therefore, the transactions primary key is a composite of both the transaction hash and branch.
+When competing blocks come in, if they are valid, we accept both.... but only 1 is authoritative (the longest one)
+When an alt branch outgrows the primary, we have to restructure
+In order to restructure chains quickly without a performance hit, <diagram & explanation here>
+
+Persistence Engine
+==================
+SQLite is used.  DB that's fast enough, process-safe, thread-safe, doesn't require a separate standalone DB, convenient advanced query language, context manager for transactions, built-in locking.  LevelDB was considered, but Python requires multiprocessing > threads to achieve performance gain.  LevelDB is thread-safe but not process-safe.  Desired a process-safe DB that doesn't require a separate standalone service.
+
+Proof of Collaboration
+======================
+*Future*
+Eliminate miners fighting over a block
+On-chain registry
+
+Attack Vectors
+--------------
+- Spoofing other miners
+  Passing a bloom filter?
+  chain of verifiable signatures? ie Encrypt_priv(Encrypt_priv(Encrypt_priv(block)))
+- Sybil attack
+  on-chain registration
+  IP CIDR block restriction
+
+
+Asset Transactions
+==================
+Transactions include an asset type.  The default asset type is the sha256 sum of the string "Cranky Coin".  New assets can be registered by submitting a transaction with a registration type enumerated value.  Hereinafter, the registrant owns that asset and may transact that asset though fees remain in the native asset type - Cranky Coin.
+
+
+
+c' = original longest chain
+c" = new longest chain
+if height[c"] > height[c']
+	then n <- height[c"]
+		b <- branch[c"[n]]
+		while c"[n] <> 0
+			do if c'[n] <> NIL
+					then branch[c'[n]] <- b
+				branch[c"[n]] <- 0
+				n <- n - 1
