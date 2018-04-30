@@ -30,6 +30,7 @@ network:
     unconfirmed_transactions_url: "http://{}:{}/unconfirmed_tx/{}"
     blocks_inv_url: "http://{}:{}/blocks/start/{}/end/{}"
     blocks_url: "http://{}:{}/blocks/{}/{}"
+    height_url: "http://{}:{}/height/"
     transaction_history_url: "http://{}:{}/address/{}/transactions"
     inbox_url: "http://{}:{}/inbox/"
     balance_url: "http://{}:{}/address/{}/balance"

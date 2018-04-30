@@ -74,7 +74,7 @@ class Validator(object):
             return False
         return True
 
-    def validate_transactions_inv(self, transactions_inv):
+    def validate_block_transactions_inv(self, transactions_inv):
         """
         Checks a list of transaction hashes, checks for double-spends and/or entries in the mempool
         Returns a list of unknown transaction hashes

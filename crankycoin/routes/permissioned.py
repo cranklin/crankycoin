@@ -28,6 +28,7 @@ def requires_whitelist(func):
 @requires_whitelist
 def post_to_inbox():
     body = request.json
+    # TODO: validate sender really is who they say they are using signature
     host = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
     msg_type = body.get('type')
     if MessageType(msg_type) in MessageType:
@@ -43,13 +44,15 @@ def post_to_inbox():
 @requires_whitelist
 def get_blocks_inv(start_block_height, end_block_height):
     blockchain = Blockchain()
-    if end_block_height - start_block_height > 500:
-        end_block_height = start_block_height + 500
+    blocks_range = end_block_height - start_block_height
+    if blocks_range < 1 or blocks_range > 500:
+        response.status = 400
+        return json.dumps({'success': False, 'reason': 'Bad request'})
     blocks_inv = blockchain.get_hashes_range(start_block_height, end_block_height)
     if blocks_inv:
-        return json.dumps({'block_hashes': blocks_inv})
+        return json.dumps({'blocks_inv': blocks_inv})
     response.status = 404
-    return json.dumps({'success': False, 'reason': 'Invalid block range'})
+    return json.dumps({'success': False, 'reason': 'Blocks not found'})
 
 
 @permissioned_app.route('/transactions/block_hash/<block_hash>')

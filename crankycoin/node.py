@@ -112,39 +112,31 @@ class FullNode(NodeMixin):
             elif msg_type == MessageType.UNCONFIRMED_TRANSACTION:
                 unconfirmed_transaction = Transaction.from_dict(data)
                 if sender == self.HOST:
+                    # transaction already validated before being enqueued
                     valid = True
                 else:
                     valid = self.validator.validate_transaction(unconfirmed_transaction)
                 if valid:
-                    self.api_client.broadcast_transaction_inv([unconfirmed_transaction.tx_hash], self.HOST)
+                    self.api_client.broadcast_unconfirmed_transaction_inv([unconfirmed_transaction.tx_hash], self.HOST)
                 continue
             elif msg_type == MessageType.BLOCK_INV:
                 missing_block_headers = []
                 for block_hash in data:
+                    # aggregate unknown block header hashes
                     block_header = self.blockchain.get_block_header_by_hash(block_hash)
                     if block_header is None:
                         missing_block_headers.append(block_hash)
                 for block_hash in missing_block_headers:
                     # We don't have these blocks in our database.  Fetch them from the sender
-                    block_header = self.api_client.request_block_header(sender, self.FULL_NODE_PORT, block_hash=block_hash)
-                    prev_header = self.blockchain.get_block_header_by_hash(block_header.previous_hash)
-                    # TODO: validate block_header hash
-                    transactions_inv = self.api_client.request_transactions_index(sender, self.FULL_NODE_PORT, block_hash)
-                    # TODO: validate transaction hashes and merkle root
-                    block_transactions = []
-                    for tx_hash in transactions_inv:
-                        transaction = self.mempool.get_unconfirmed_transaction(tx_hash)
-                        if transaction is None:
-                            # We don't have this transaction in our database.  Fetch it from the sender
-                            transaction = self.api_client.request_transaction(sender, self.FULL_NODE_PORT, tx_hash)
-                        block_transactions.append(transaction)
-                    # TODO: construct block
-                    # TODO: add block
-                    # TODO: re-broadcast INV
+                    block_header = self.api_client.request_block_header(sender, self.FULL_NODE_PORT,
+                                                                        block_hash=block_hash)
+                    self.__process_block_header(block_header, sender)
                 continue
-            elif msg_type == MessageType.TRANSACTION_INV:
+            elif msg_type == MessageType.UNCONFIRMED_TRANSACTION_INV:
                 missing_transactions = []
+                new_unconfirmed_transactions = []
                 for tx_hash in data:
+                    # skip known unconfirmed transactions
                     transaction = self.blockchain.get_transaction_by_hash(tx_hash)
                     if transaction:
                         continue
@@ -153,10 +145,16 @@ class FullNode(NodeMixin):
                         continue
                     missing_transactions.append(tx_hash)
                 for tx_hash in missing_transactions:
+                    # retrieve unknown unconfirmed transactions
                     transaction = self.api_client.request_transaction(sender, self.FULL_NODE_PORT, tx_hash)
-                    # TODO: validate transaction and place in mempool
+                    valid = self.validator.validate_transaction(transaction)
                     if valid:
+                        # validate and store retrieved unconfirmed transactions
                         self.mempool.push_unconfirmed_transaction(transaction)
+                        new_unconfirmed_transactions.append(tx_hash)
+                if len(new_unconfirmed_transactions):
+                    # broadcast new unconfirmed transactions
+                    self.api_client.broadcast_unconfirmed_transaction_inv(new_unconfirmed_transactions)
                 continue
             else:
                 logger.warn("Encountered unknown message type %s from %s", msg_type, sender)
@@ -164,7 +162,7 @@ class FullNode(NodeMixin):
 
     def __process_block_header(self, block_header, sender):
         """
-        Block was mined by a (1st degree) peer.  Request transactions_inv and Validate header
+        Request transactions_inv and Validate header
 
         :param block_header:
         :param sender:
@@ -174,7 +172,8 @@ class FullNode(NodeMixin):
         transactions_inv = self.api_client.request_transactions_inv(sender, self.FULL_NODE_PORT, block_header.hash)
         valid_block_height = self.validator.validate_block_header(block_header, transactions_inv)
         if valid_block_height:
-            block_transactions, missing_transactions_inv = self.validator.validate_transactions_inv(transactions_inv)
+            block_transactions, missing_transactions_inv = self.validator.validate_block_transactions_inv(
+                transactions_inv)
             for tx_hash in missing_transactions_inv:
                 transaction = self.api_client.request_transaction(sender, self.FULL_NODE_PORT, tx_hash)
                 if TransactionType(transaction.tx_type) == TransactionType.COINBASE:
@@ -192,8 +191,52 @@ class FullNode(NodeMixin):
             if self.validator.validate_block(block, block_header.merkle_root) and self.blockchain.add_block(block):
                 self.api_client.broadcast_block_inv([block_header.hash], self.HOST)
         elif valid_block_height is None:
-            # TODO: synchronize with sender
-            self.api_client.request_blocks_inv(sender, self.FULL_NODE_PORT, )
+            self.__synchronize(sender)
+
+    def __synchronize(self, node):
+        # synchronize with sender
+        repeat_sync = True
+        while repeat_sync is True:
+            current_height = self.blockchain.get_height()
+            peer_height = self.api_client.request_height(node)
+            if peer_height is not None and peer_height > current_height:
+                # 100 blocks of overlap should be sufficient to find a common block lest we are on a forked branch
+                start_height = current_height - 100 if current_height > 100 else 1
+                if current_height < peer_height - 500:
+                    # we are way behind.
+                    end_height = start_height + 500
+                else:
+                    end_height = peer_height
+                    repeat_sync = False
+                peer_blocks_inv = self.api_client.audit(node, start_height, end_height)
+                last_common_block = self.__find_last_common_block(peer_blocks_inv)
+                if last_common_block is None:
+                    logger.warn("Completely out of sync with peer at {}".format(node))
+                    break
+                block_header, branch, height = last_common_block
+                # construct list of missing block hashes to request from the peer
+                hashes_to_query = peer_blocks_inv[peer_blocks_inv.index(block_header.hash)+1:]
+                for block_hash in hashes_to_query:
+                    block_header = self.api_client.request_block_header(node, self.FULL_NODE_PORT,
+                                                                        block_hash=block_hash)
+                    self.__process_block_header(block_header, node)
+            else:
+                repeat_sync = False
+
+    def __find_last_common_block(self, peer_blocks_inv):
+        """
+        Identify the last common between the local chain and the peer chain.
+        :param peer_blocks_inv:
+        :return: latest common block height, latest common block hash
+        :rtype: tuple(int, string)
+        """
+        last_common_block = None
+        for hash in peer_blocks_inv:
+            block = self.blockchain.get_block_header_by_hash(hash)
+            if block is None:
+                break
+            last_common_block = block
+        return last_common_block
 
     # def check_peers(self):
     #     if self.peers.get_peers_count() < self.MIN_PEERS:

@@ -33,6 +33,12 @@ def get_status():
     return json.dumps(config['network'])
 
 
+@public_app.route('/height/')
+def get_height():
+    blockchain = Blockchain()
+    return json.dumps({"height": blockchain.get_height()})
+
+
 @public_app.route('/nodes/')
 def get_nodes():
     peers = Peers()
