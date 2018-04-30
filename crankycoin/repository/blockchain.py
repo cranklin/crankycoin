@@ -284,6 +284,8 @@ class Blockchain(object):
             cursor = conn.cursor()
             cursor.execute(sql)
             block = cursor.fetchone()
+        if block is None:
+            return None
         return BlockHeader(block[1], block[2], block[5], block[4], block[6]), block[7], block[3]
 
     def get_branches_by_prevhash(self, prev_hash):

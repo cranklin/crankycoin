@@ -16,6 +16,7 @@ class ApiClient(object):
     TRANSACTIONS_INV_URL = config['network']['transactions_inv_url']
     BLOCKS_INV_URL = config['network']['blocks_inv_url']
     BLOCKS_URL = config['network']['blocks_url']
+    HEIGHT_URL = config['network']['height_url']
     TRANSACTION_HISTORY_URL = config['network']['transaction_history_url']
     BALANCE_URL = config['network']['balance_url']
     DOWNTIME_THRESHOLD = config['network']['downtime_threshold']
@@ -48,6 +49,17 @@ class ApiClient(object):
             if response.status_code == 200:
                 status_dict = response.json()
                 return status_dict == config['network']
+        except requests.exceptions.RequestException as re:
+            pass
+        return None
+
+    def request_height(self, node):
+        url = self.HEIGHT_URL.format(node, self.FULL_NODE_PORT)
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                height_dict = response.json()
+                return height_dict.get('height')
         except requests.exceptions.RequestException as re:
             pass
         return None
@@ -239,11 +251,11 @@ class ApiClient(object):
                 self.peers.record_downtime(node)
         return
 
-    def broadcast_transaction_inv(self, tx_hashes, host):
+    def broadcast_unconfirmed_transaction_inv(self, tx_hashes, host):
         # Used for (re)broadcasting a new transaction that was received and added
         data = {
             "host": host,
-            "type": MessageType.TRANSACTION_INV.value,
+            "type": MessageType.UNCONFIRMED_TRANSACTION_INV.value,
             "data": tx_hashes
         }
         logger.debug("broadcasting transaction inv: {}".format(data))
@@ -272,3 +284,32 @@ class ApiClient(object):
                 logger.warn("Request Exception with host: {}".format(node))
                 self.peers.record_downtime(node)
         return
+
+    def push_synchronize(self, node, blocks_inv, current_height, host):
+        # Push local blocks_inv to remote node to initiate a sync
+        data = {
+            "host": host,
+            "type": MessageType.SYNCHRONIZE.value,
+            "data": {"height": current_height, "blocks_inv": blocks_inv}
+        }
+        logger.debug("sending sync request to peer at: {}".format(node))
+        url = self.INBOX_URL.format(node, self.FULL_NODE_PORT)
+        try:
+            response = requests.post(url, json=data)
+        except requests.exceptions.RequestException as re:
+            logger.warn("Request Exception with host: {}".format(node))
+            self.peers.record_downtime(node)
+        return
+
+    def audit(self, node, start_height, end_height):
+        # Audit node's blocks_inv and sync if necessary
+        url = self.BLOCKS_INV_URL.format(node, self.FULL_NODE_PORT, start_height, end_height)
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                tx_dict = response.json()
+                return tx_dict.get('blocks_inv')
+        except requests.exceptions.RequestException as re:
+            logger.warn("Request Exception with host: {}".format(node))
+            self.peers.record_downtime(node)
+        return None
