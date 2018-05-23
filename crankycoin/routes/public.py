@@ -80,7 +80,8 @@ def get_balance(address):
 @public_app.route('/address/<address>/transactions')
 def get_transaction_history(address):
     blockchain = Blockchain()
-    return json.dumps(blockchain.get_transaction_history(address))
+    transaction_history = blockchain.get_transaction_history(address)
+    return json.dumps([transaction.to_json() for transaction in transaction_history])
 
 
 @public_app.route('/transactions/<tx_hash>')
