@@ -32,17 +32,21 @@ class Validator(object):
 
     def check_block_reward(self, block):
         reward_amount = self.blockchain.get_reward(block.height)
-        for transaction in block.transactions[1:0]:
-            if TransactionType(transaction.tx_type) == TransactionType.GENESIS:
+        for transaction in block.transactions[1:]:
+            if TransactionType(transaction.tx_type) == TransactionType.COINBASE:
                 logger.warn("Block not valid.  Multiple coinbases detected")
                 return False
             reward_amount += transaction.fee
         # first transaction is coinbase
         reward_transaction = block.transactions[0]
-        if TransactionType(reward_transaction.tx_type) != TransactionType.GENESIS:
+        if TransactionType(reward_transaction.tx_type) != TransactionType.COINBASE:
             logger.warn("Block not valid.  Missing coinbase")
             return False
-        if reward_transaction.amount != reward_amount or reward_transaction.source != "0":
+        if reward_transaction.amount != reward_amount:
+            logger.warn("Invalid block reward {} should be {}".format(reward_transaction.amount, reward_amount))
+            return False
+        if reward_transaction.source != "0":
+            logger.warn("Invalid Coinbase source")
             return False
         return True
 
