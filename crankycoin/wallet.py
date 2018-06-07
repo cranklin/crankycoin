@@ -1,3 +1,4 @@
+import sys
 import coincurve
 import json
 import random
@@ -6,6 +7,9 @@ from crankycoin import logger
 from crankycoin.node import NodeMixin
 from crankycoin.models.transaction import Transaction
 
+_PY3 = sys.version_info[0] > 2
+if _PY3:
+    import codecs
 
 class Client(NodeMixin):
 
@@ -23,7 +27,7 @@ class Client(NodeMixin):
         self.check_peers()
 
     def get_public_key(self):
-        return self.__public_key__.format(compressed=True).encode('hex')
+        return self.__public_key__.format(compressed=True).encode('hex') if not _PY3 else codecs.encode(self.__public_key__.format(compressed=True), 'hex')
 
     def get_private_key(self):
         return self.__private_key__.to_hex()
