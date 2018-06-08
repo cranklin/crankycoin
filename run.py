@@ -22,6 +22,7 @@ from crankycoin.services.api_client import ApiClient
 _PY3 = sys.version_info[0] > 2
 if _PY3:
     raw_input = input
+    import codecs
 
 
 def client():
@@ -43,11 +44,11 @@ def client():
         wallet = Client(peers, api_client)
     else:
         passphrase = getpass("Enter passphrase: ")
-        encrypted = encrypted.decode('hex')
+        encrypted = encrypted.decode('hex') if not _PY3 else codecs.decode(encrypted, 'hex')
         nonce = encrypted[0:16]
         tag = encrypted[16:32]
         ciphertext = encrypted[32:]
-        hashedpass = hashlib.sha256(passphrase).digest()
+        hashedpass = hashlib.sha256(passphrase.encode('utf-8')).digest()
         cipher = AES.new(hashedpass, AES.MODE_EAX, nonce)
         try:
             private_key = cipher.decrypt_and_verify(ciphertext, tag)
