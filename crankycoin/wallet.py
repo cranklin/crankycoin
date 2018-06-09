@@ -18,7 +18,7 @@ class Client(NodeMixin):
 
     def __init__(self, peers, api_client, private_key=None):
         if private_key is not None:
-            self.__private_key__ = coincurve.PrivateKey.from_hex(private_key)
+            self.__private_key__ = coincurve.PrivateKey.from_hex(private_key.decode())
         else:
             logger.info("No private key provided. Generating new key pair.")
             self.__private_key__ = coincurve.PrivateKey()
