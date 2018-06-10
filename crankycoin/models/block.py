@@ -1,3 +1,4 @@
+import codecs
 import hashlib
 import json
 import time
@@ -30,7 +31,7 @@ class BlockHeader(object):
         :return: scrypt hash
         :rtype: str
         """
-        hashable = self.to_hashable()
+        hashable = self.to_hashable().encode('utf-8')
         hash_object = pyscrypt.hash(
             password=hashable,
             salt=hashable,
@@ -38,7 +39,7 @@ class BlockHeader(object):
             r=1,
             p=1,
             dkLen=32)
-        return hash_object.encode('hex')
+        return codecs.encode(hash_object, 'hex')
 
     @property
     def hash_difficulty(self):
