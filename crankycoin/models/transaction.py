@@ -126,7 +126,7 @@ class Transaction(object):
         ))
 
     def verify(self):
-        return coincurve.PublicKey(codecs.decode(self._source, 'hex)).verify(codecs.decode(self._signature, 'hex'), self.to_signable())
+        return coincurve.PublicKey(codecs.decode(self._source, 'hex')).verify(codecs.decode(self._signature, 'hex'), self.to_signable())
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
