@@ -28,6 +28,6 @@ combined = "{}{}{}".format(cipher.nonce, tag, ciphertext)
 
 print("Encrypted private key: ")
 if not _PY3:
-    print(combined.encode('hex')
+    print(combined.encode('hex'))
 else:
-    codecs.encode(combined.encode('utf-8'), 'hex'))
+    codecs.encode(combined.encode('utf-8'), 'hex')
