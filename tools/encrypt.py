@@ -20,7 +20,7 @@ if passphrase != verifypass:
     print("Passphrases do not match")
     sys.exit(1)
 
-secret = raw_input("Secret: ")
+secret = input("Secret: ")
 hashedpass = hashlib.sha256(passphrase.encode('utf-8').digest()
 cipher = AES.new(hashedpass, AES.MODE_EAX)
 ciphertext, tag = cipher.encrypt_and_digest(secret.encode('utf-8'))
