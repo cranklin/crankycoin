@@ -30,4 +30,4 @@ print("Encrypted private key: ")
 if not _PY3:
     print(combined.encode('hex'))
 else:
-    codecs.encode(combined.encode('utf-8'), 'hex')
+    print(codecs.encode(combined.encode('utf-8'), 'hex').decode())
