@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 from crankycoin import config
@@ -14,6 +15,8 @@ class Peers(object):
         # TODO: do a health check of each peer
 
     def db_init(self):
+        if not os.path.exists('./data'):
+            os.makedirs('./data')
         with sqlite3.connect(self.PEER_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("PRAGMA table_info(peers)")
