@@ -9,6 +9,8 @@ import sys
 import time
 from getpass import getpass
 from Cryptodome.Cipher import AES
+import codecs
+
 from crankycoin import config, logger
 from crankycoin.node import FullNode
 from crankycoin.wallet import Client
@@ -20,9 +22,8 @@ from crankycoin.services.validator import Validator
 from crankycoin.services.api_client import ApiClient
 
 _PY3 = sys.version_info[0] > 2
-if _PY3:
-    raw_input = input
-    import codecs
+if not _PY3:
+    input = raw_input
 
 
 def client():
@@ -44,7 +45,7 @@ def client():
         wallet = Client(peers, api_client)
     else:
         passphrase = getpass("Enter passphrase: ")
-        encrypted = encrypted.decode('hex') if not _PY3 else codecs.decode(encrypted, 'hex')
+        encrypted = codecs.decode(encrypted, 'hex')
         nonce = encrypted[0:16]
         tag = encrypted[16:32]
         ciphertext = encrypted[32:]
@@ -59,7 +60,7 @@ def client():
             sys.exit(1)
 
     while True:
-        cmd = raw_input("{} ({}) wallet > ".format(config['network']['name'], config['network']['ticker_symbol']))
+        cmd = input("{} ({}) wallet > ".format(config['network']['name'], config['network']['ticker_symbol']))
         cmd_split = cmd.split()
         try:
             if cmd_split[0] == "balance":
@@ -122,7 +123,7 @@ def full():
         mining = False
 
     while True:
-        cmd = raw_input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
+        cmd = input("{} ({}) full node > ".format(config['network']['name'], config['network']['ticker_symbol']))
         cmd_split = cmd.split()
         try:
             if cmd_split[0] == "balance":

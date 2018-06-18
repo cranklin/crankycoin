@@ -1,12 +1,13 @@
+import sys
 import zmq
 
 from crankycoin import config, logger
 
+WIN32 = 'win32' in sys.platform
 
 class Queue(object):
-
-    QUEUE_BIND_IN = config['user']['queue_bind_in']
-    QUEUE_BIND_OUT = config['user']['queue_bind_out']
+    QUEUE_BIND_IN = config['user']['queue_bind_in'] if not WIN32 else config['user']['win_queue_bind_in']
+    QUEUE_BIND_OUT = config['user']['queue_bind_out'] if not WIN32 else config['user']['win_queue_bind_out']
     QUEUE_PROCESSING_WORKERS = config['user']['queue_processing_workers']
 
     @classmethod
@@ -23,7 +24,7 @@ class Queue(object):
             zmq.proxy(frontend, backend)
 
         except Exception as e:
-            logger.error("could not start queue: %s", e.message)
+            logger.error("could not start queue: %s", e)
             raise
 
     @classmethod

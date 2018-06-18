@@ -107,7 +107,7 @@ class Transaction(object):
         return hash_object.hexdigest()
 
     def sign(self, private_key):
-        signature = coincurve.PrivateKey.from_hex(private_key).sign(self.to_signable()).encode('hex')
+        signature = codecs.encode(coincurve.PrivateKey.from_hex(private_key).sign(self.to_signable()), 'hex')
         self._signature = signature
         self._tx_hash = self._calculate_tx_hash()
         return signature
@@ -126,7 +126,7 @@ class Transaction(object):
         ))
 
     def verify(self):
-        return coincurve.PublicKey(self._source.decode('hex')).verify(self._signature.decode('hex'), self.to_signable())
+        return coincurve.PublicKey(codecs.decode(self._source, 'hex')).verify(codecs.decode(self._signature, 'hex'), self.to_signable())
 
     def to_json(self):
         return json.dumps(self, default=lambda o: {key.lstrip('_'): value for key, value in o.__dict__.items()},
