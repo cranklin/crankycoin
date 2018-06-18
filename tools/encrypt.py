@@ -28,4 +28,7 @@ ciphertext, tag = cipher.encrypt_and_digest(secret.encode('utf-8'))
 combined = "{}{}{}".format(cipher.nonce, tag, ciphertext)
 
 print("Encrypted private key: ")
-print(codecs.encode(combined.encode('utf-8'), 'hex').decode())
+if not _PY3:
+    print(combined.encode('hex'))
+else:
+    print(codecs.encode(combined.encode('utf-8'), 'hex').decode())
