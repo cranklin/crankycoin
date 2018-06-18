@@ -1,6 +1,6 @@
 user:
-    public_key:
-    encrypted_private_key:
+    public_key: ""
+    encrypted_private_key: ""
     ip: "127.0.0.1"
     chain_db: "./data/chaindata.db"
     pool_db: "./data/pool.db"
@@ -9,6 +9,8 @@ user:
     min_peers: 10
     queue_bind_in: "ipc:///tmp/crank_in"
     queue_bind_out: "ipc:///tmp/crank_out"
+    win_queue_bind_in: "tcp://127.0.0.1:5555"
+    win_queue_bind_out: "tcp://127.0.0.1:5556"
     queue_processing_workers: 2
 network:
     name: "Cranky Coin"
