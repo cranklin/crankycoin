@@ -1,11 +1,13 @@
 import unittest
+
 from mock import patch, Mock, call
+
 from crankycoin.node import NodeMixin, FullNode
-from crankycoin.services.api_client import ApiClient
-from crankycoin.services.validator import Validator
-from crankycoin.repository.peers import Peers
 from crankycoin.repository.blockchain import Blockchain
 from crankycoin.repository.mempool import Mempool
+from crankycoin.repository.peers import Peers
+from crankycoin.services.api_client import ApiClient
+from crankycoin.services.validator import Validator
 
 
 class TestNode(unittest.TestCase):
