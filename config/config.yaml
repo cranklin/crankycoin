@@ -7,10 +7,8 @@ user:
     peer_db: "./data/peer.db"
     max_peers: 30
     min_peers: 10
-    queue_bind_in: "ipc:///tmp/crank_in"
-    queue_bind_out: "ipc:///tmp/crank_out"
-    win_queue_bind_in: "tcp://127.0.0.1:5555"
-    win_queue_bind_out: "tcp://127.0.0.1:5556"
+    queue_bind_in: "tcp://127.0.0.1:30014"
+    queue_bind_out: "tcp://127.0.0.1:30015"
     queue_processing_workers: 2
 network:
     name: "Cranky Coin"
