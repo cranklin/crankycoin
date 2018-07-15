@@ -45,7 +45,8 @@ class TestNode(unittest.TestCase):
         expected_request_nodes_calls = [call.request_nodes('111.222.333.444', 30013),
                                         call.request_nodes('222.333.444.555', 30013)]
         self.assertEqual(self.mock_api_client.method_calls, expected_request_nodes_calls)
-        self.assertItemsEqual(result, ['111.222.333.444', '222.333.444.555', '333.444.555.777', '444.555.777.888'])
+        self.assertEqual(len(result), 4)
+        self.assertEqual(set(result), {'111.222.333.444', '222.333.444.555', '333.444.555.777', '444.555.777.888'})
 
     def test_discover_peers_When_no_new_peers_Returns_known_peers(self):
         self.mock_peers.get_all_peers.return_value = ['111.222.333.444', '222.333.444.555']
@@ -56,7 +57,8 @@ class TestNode(unittest.TestCase):
         expected_request_nodes_calls = [call.request_nodes('111.222.333.444', 30013),
                                         call.request_nodes('222.333.444.555', 30013)]
         self.assertEqual(self.mock_api_client.method_calls, expected_request_nodes_calls)
-        self.assertItemsEqual(result, ['111.222.333.444', '222.333.444.555'])
+        self.assertEqual(len(result), 2)
+        self.assertEqual(set(result), {'111.222.333.444', '222.333.444.555'})
 
     def test_discover_peers_When_new_peers_none_Returns_known_peers(self):
         self.mock_peers.get_all_peers.return_value = ['111.222.333.444', '222.333.444.555']
@@ -67,4 +69,5 @@ class TestNode(unittest.TestCase):
         expected_request_nodes_calls = [call.request_nodes('111.222.333.444', 30013),
                                         call.request_nodes('222.333.444.555', 30013)]
         self.assertEqual(self.mock_api_client.method_calls, expected_request_nodes_calls)
-        self.assertItemsEqual(result, ['111.222.333.444', '222.333.444.555'])
+        self.assertEqual(len(result), 2)
+        self.assertEqual(set(result), {'111.222.333.444', '222.333.444.555'})

@@ -103,7 +103,7 @@ class Transaction(object):
             "signature": self._signature
         }
         data_json = json.dumps(data, sort_keys=True)
-        hash_object = hashlib.sha256(data_json)
+        hash_object = hashlib.sha256(data_json.encode('utf-8'))
         return hash_object.hexdigest()
 
     def sign(self, private_key):
