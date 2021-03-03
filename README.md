@@ -6,9 +6,9 @@ Cranky Coin is a simple blockchain, cryptocurrency, wallet implementation
 ## Getting Started
 
 ```
-# apt-get install pip
-# pip install virtualenv
-# virtualenv venv
+# apt install python3-pip
+# pip3 install virtualenv
+# virtualenv -p python3 venv
 # . venv/bin/activate
 # pip install -r requirements.txt
 # pip install -r requirements-dev.txt
