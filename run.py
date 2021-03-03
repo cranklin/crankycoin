@@ -41,7 +41,7 @@ def client():
     peers = Peers()
     api_client = ApiClient(peers)
     encrypted = config['user']['encrypted_private_key']
-    if encrypted is None:
+    if not encrypted.strip():
         print("\n\nNo private key provided. A new wallet will be generated for you...\n\n")
         wallet = Client(peers, api_client)
     else:
