@@ -1,4 +1,4 @@
-bottle==0.12.19
+bottle==0.12.20
 coincurve==15.0.0
 dill==0.3.3
 ecdsa==0.16.1
